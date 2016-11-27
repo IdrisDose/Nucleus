@@ -9,7 +9,7 @@ Nucleus
 * [TeamCity]
 * [IRC] | EsperNet - #nucleus
 
-Master branch build status:  [![API 5 branch](https://img.shields.io/travis/NucleusPowered/Nucleus/sponge-api/5.svg?style=flat-square)](https://travis-ci.org/NucleusPowered/Nucleus)
+Sponge API 6 branch build status:  [![API 6 branch](https://img.shields.io/travis/NucleusPowered/Nucleus/sponge-api/6.svg?style=flat-square)](https://travis-ci.org/NucleusPowered/Nucleus)
 
 Licence: [MIT](LICENSE.md)
 
