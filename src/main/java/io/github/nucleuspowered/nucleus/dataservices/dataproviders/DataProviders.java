@@ -35,6 +35,7 @@ public class DataProviders {
     private final TypeToken<WorldDataNode> ttw = TypeToken.of(WorldDataNode.class);
     private final TypeToken<GeneralDataNode> ttg = TypeToken.of(GeneralDataNode.class);
     private final TypeToken<Map<String, ItemDataNode>> ttmsi = new TypeToken<Map<String, ItemDataNode>>() {};
+    private final TypeToken<Map<String, String>> ttss = new TypeToken<Map<String, String>>() {};
     private final TypeToken<KitConfigDataNode> ttmk = TypeToken.of(KitConfigDataNode.class);
 
     public DataProviders(NucleusPlugin plugin) {
@@ -86,6 +87,16 @@ public class DataProviders {
         try {
             Path p = plugin.getConfigDirPath().resolve("items.conf");
             return new ConfigurateDataProvider<>(ttmsi, new LazyConfigurationLoader<>(() -> getHoconBuilder().setPath(p).build()), HashMap::new, p, false);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public DataProvider<Map<String, String>> getNameBanDataProvider() {
+        // For now, just the Configurate one.
+        try {
+            Path p = plugin.getDataPath().resolve("namebans.json");
+            return new ConfigurateDataProvider<>(ttss, new LazyConfigurationLoader<>(() -> getGsonBuilder().setPath(p).build()), HashMap::new, p, false);
         } catch (Exception e) {
             return null;
         }

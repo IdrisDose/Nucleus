@@ -6,6 +6,7 @@ package io.github.nucleuspowered.nucleus;
 
 import com.flowpowered.math.vector.Vector3d;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import io.github.nucleuspowered.nucleus.api.data.interfaces.EndTimestamp;
 import io.github.nucleuspowered.nucleus.internal.messages.MessageProvider;
 import io.github.nucleuspowered.nucleus.util.Action;
@@ -15,8 +16,12 @@ import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.type.HandTypes;
+import org.spongepowered.api.entity.Entity;
+import org.spongepowered.api.entity.EntityTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.User;
+import org.spongepowered.api.event.cause.Cause;
+import org.spongepowered.api.event.cause.NamedCause;
 import org.spongepowered.api.item.ItemType;
 import org.spongepowered.api.item.ItemTypes;
 import org.spongepowered.api.item.inventory.Inventory;
@@ -27,6 +32,7 @@ import org.spongepowered.api.item.inventory.entity.Hotbar;
 import org.spongepowered.api.item.inventory.property.InventoryDimension;
 import org.spongepowered.api.item.inventory.transaction.InventoryTransactionResult;
 import org.spongepowered.api.item.inventory.type.GridInventory;
+import org.spongepowered.api.service.context.Context;
 import org.spongepowered.api.service.pagination.PaginationList;
 import org.spongepowered.api.service.pagination.PaginationService;
 import org.spongepowered.api.service.permission.Subject;
@@ -47,10 +53,13 @@ import java.text.NumberFormat;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
 
@@ -58,6 +67,8 @@ public class Util {
 
     private Util() {
     }
+
+    public static final String usernameRegexPattern = "[0-9a-zA-Z_]{3,16}";
 
     public static final UUID consoleFakeUUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
 
@@ -69,29 +80,44 @@ public class Util {
      * Adds items to a {@link Player}s {@link Inventory}
      * @param player The {@link Player}
      * @param itemStacks The {@link ItemStackSnapshot}s to add.
+     * @param dropRejected If true, drop items that are rejected from the inventory.
      * @return {@link Tristate#TRUE} if everything is successful, {@link Tristate#FALSE} if nothing was added, {@link Tristate#UNDEFINED}
      * if some stacks were added.
      */
-    public static Tristate addToStandardInventory(Player player, Collection<ItemStackSnapshot> itemStacks) {
+    public static Tristate addToStandardInventory(Player player, Collection<ItemStackSnapshot> itemStacks, boolean dropRejected) {
         Tristate ts = Tristate.FALSE;
         Inventory target = Util.getStandardInventory(player);
+        boolean dropItems = false;
         for (ItemStackSnapshot stack : itemStacks) {
-            // Ignore anything that is NONE
-            if (stack.getType() != ItemTypes.NONE) {
-                // Give them the kit.
-                InventoryTransactionResult itr = target.offer(stack.createStack());
+            if (dropItems) {
+                Util.dropItemOnFloorAtLocation(stack, player.getWorld(), player.getLocation().getPosition());
+            } else {
 
-                // If some items were rejected...
-                if (!itr.getRejectedItems().isEmpty()) {
-                    // ...tell the user and break out.
-                    return ts;
+                // Ignore anything that is NONE
+                if (stack.getType() != ItemTypes.NONE) {
+                    // Give them the kit.
+                    InventoryTransactionResult itr = target.offer(stack.createStack());
+
+                    // If some items were rejected...
+                    if (!itr.getRejectedItems().isEmpty()) {
+                        // ...tell the user and break out.
+                        if (dropRejected) {
+                            dropItems = true;
+                            itr.getRejectedItems()
+                                .forEach(x -> Util.dropItemOnFloorAtLocation(x, player.getWorld(), player.getLocation().getPosition()));
+                        } else {
+                            return ts;
+                        }
+                    }
+
+                    if (!dropItems) {
+                        ts = Tristate.UNDEFINED;
+                    }
                 }
-
-                ts = Tristate.UNDEFINED;
             }
         }
 
-        return Tristate.TRUE;
+        return dropItems ? ts : Tristate.TRUE;
     }
 
     public static UUID getUUID(CommandSource src) {
@@ -349,15 +375,21 @@ public class Util {
     }
 
     /**
-     * Gets all of the player's parent {@link Subject}s
+     * Gets all of the player's parent {@link Subject}s for the given {@link Context}
      *
      * @param pl The {@link Subject} to get the parents of
      * @return The {@link List} of {@link Subject}s, or an empty list if there nothing was found.
      */
     public static List<Subject> getParentSubjects(Subject pl) {
         try {
-            return pl.getSubjectData().getAllParents().values().stream().flatMap(Collection::stream)
-                    .sorted((x, y) -> y.getParents().size() - x.getParents().size())
+            Set<Context> contextSet = pl.getActiveContexts();
+            Map<Subject, Integer> subjects = Maps.newHashMap();
+
+            // Try to cache already known values
+            Function<Subject, Integer> subjectIntegerFunction = subject -> subjects.computeIfAbsent(subject, k -> k.getParents(contextSet).size());
+
+            return pl.getParents(contextSet).stream().distinct()
+                    .sorted(Comparator.comparingInt(subjectIntegerFunction::apply))
                     .collect(Collectors.toList());
         } catch (Exception e) {
             return Lists.newArrayList();
@@ -409,5 +441,11 @@ public class Util {
         }
 
         return is.getItem();
+    }
+
+    public static void dropItemOnFloorAtLocation(ItemStackSnapshot itemStackSnapshotToDrop, World world, Vector3d position) {
+        Entity entityToDrop = world.createEntity(EntityTypes.ITEM, position);
+        entityToDrop.offer(Keys.REPRESENTED_ITEM, itemStackSnapshotToDrop);
+        world.spawnEntity(entityToDrop, Cause.of(NamedCause.owner(Nucleus.getNucleus())));
     }
 }

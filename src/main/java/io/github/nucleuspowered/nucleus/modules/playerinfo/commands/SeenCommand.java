@@ -6,7 +6,6 @@ package io.github.nucleuspowered.nucleus.modules.playerinfo.commands;
 
 import com.google.inject.Inject;
 import io.github.nucleuspowered.nucleus.Nucleus;
-import io.github.nucleuspowered.nucleus.NucleusPlugin;
 import io.github.nucleuspowered.nucleus.Util;
 import io.github.nucleuspowered.nucleus.argumentparsers.NicknameArgument;
 import io.github.nucleuspowered.nucleus.dataservices.UserService;
@@ -15,6 +14,7 @@ import io.github.nucleuspowered.nucleus.internal.PermissionRegistry;
 import io.github.nucleuspowered.nucleus.internal.annotations.Permissions;
 import io.github.nucleuspowered.nucleus.internal.annotations.RegisterCommand;
 import io.github.nucleuspowered.nucleus.internal.annotations.RunAsync;
+import io.github.nucleuspowered.nucleus.internal.messages.MessageProvider;
 import io.github.nucleuspowered.nucleus.internal.permissions.PermissionInformation;
 import io.github.nucleuspowered.nucleus.internal.permissions.SuggestedLevel;
 import io.github.nucleuspowered.nucleus.modules.misc.commands.SpeedCommand;
@@ -62,7 +62,7 @@ public class SeenCommand extends io.github.nucleuspowered.nucleus.internal.comma
     @Override
     public Map<String, PermissionInformation> permissionSuffixesToRegister() {
         Map<String, PermissionInformation> m = new HashMap<>();
-        m.put(EXTENDED_SUFFIX, new PermissionInformation(NucleusPlugin.getNucleus().getMessageProvider().getMessageWithFormat("permission.seen.extended"), SuggestedLevel.ADMIN));
+        m.put(EXTENDED_SUFFIX, new PermissionInformation(plugin.getMessageProvider().getMessageWithFormat("permission.seen.extended"), SuggestedLevel.ADMIN));
         return m;
     }
 
@@ -79,56 +79,58 @@ public class SeenCommand extends io.github.nucleuspowered.nucleus.internal.comma
         UserService iqsu = udm.get(user).get();
 
         List<Text> messages = new ArrayList<>();
+        final MessageProvider messageProvider = plugin.getMessageProvider();
 
         // Everyone gets the last online time.
         if (user.isOnline()) {
-            messages.add(NucleusPlugin.getNucleus().getMessageProvider().getTextMessageWithFormat("command.seen.iscurrently.online", user.getName()));
-            iqsu.getLastLogin().ifPresent(x -> messages.add(NucleusPlugin.getNucleus().getMessageProvider().getTextMessageWithFormat("command.seen.loggedon", Util.getTimeToNow(x))));
+            messages.add(messageProvider.getTextMessageWithFormat("command.seen.iscurrently.online", user.getName()));
+            iqsu.getLastLogin().ifPresent(x -> messages.add(messageProvider.getTextMessageWithFormat("command.seen.loggedon", Util.getTimeToNow(x))));
         } else {
-            messages.add(NucleusPlugin.getNucleus().getMessageProvider().getTextMessageWithFormat("command.seen.iscurrently.offline", user.getName()));
-            iqsu.getLastLogout().ifPresent(x -> messages.add(NucleusPlugin.getNucleus().getMessageProvider().getTextMessageWithFormat("command.seen.loggedoff", Util.getTimeToNow(x))));
+            messages.add(messageProvider.getTextMessageWithFormat("command.seen.iscurrently.offline", user.getName()));
+            iqsu.getLastLogout().ifPresent(x -> messages.add(messageProvider.getTextMessageWithFormat("command.seen.loggedoff", Util.getTimeToNow(x))));
         }
 
-        messages.add(NucleusPlugin.getNucleus().getMessageProvider().getTextMessageWithFormat("command.seen.displayname", TextSerializers.FORMATTING_CODE.serialize(plugin.getNameUtil().getName(user))));
+        messages.add(messageProvider.getTextMessageWithFormat("command.seen.displayname", TextSerializers.FORMATTING_CODE.serialize(plugin.getNameUtil().getName(user))));
 
         if (permissions.testSuffix(src, EXTENDED_SUFFIX)) {
             messages.add(Text.EMPTY);
+            messages.add(messageProvider.getTextMessageWithFormat("command.seen.uuid", user.getUniqueId().toString()));
 
             if (user.isOnline()) {
                 Player pl = user.getPlayer().get();
-                messages.add(NucleusPlugin.getNucleus().getMessageProvider().getTextMessageWithFormat("command.seen.ipaddress",
+                messages.add(messageProvider.getTextMessageWithFormat("command.seen.ipaddress",
                         pl.getConnection().getAddress().getAddress().toString()));
 
-                messages.add(NucleusPlugin.getNucleus().getMessageProvider().getTextMessageWithFormat("command.seen.firstplayed",
+                messages.add(messageProvider.getTextMessageWithFormat("command.seen.firstplayed",
                         DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                                 .withLocale(src.getLocale())
                                 .withZone(ZoneId.systemDefault()).format(pl.getJoinData().firstPlayed().get())));
 
-                messages.add(NucleusPlugin.getNucleus().getMessageProvider().getTextMessageWithFormat("command.seen.speed.walk",
+                messages.add(messageProvider.getTextMessageWithFormat("command.seen.speed.walk",
                         String.valueOf(Math.round(pl.get(Keys.WALKING_SPEED).orElse(0.1d) * SpeedCommand.multiplier))));
 
-                messages.add(NucleusPlugin.getNucleus().getMessageProvider().getTextMessageWithFormat("command.seen.speed.fly",
+                messages.add(messageProvider.getTextMessageWithFormat("command.seen.speed.fly",
                         String.valueOf(Math.round(pl.get(Keys.FLYING_SPEED).orElse(0.05d) * SpeedCommand.multiplier))));
 
-                messages.add(NucleusPlugin.getNucleus().getMessageProvider().getTextMessageWithFormat("command.seen.currentlocation", getLocationString(pl.getLocation())));
+                messages.add(messageProvider.getTextMessageWithFormat("command.seen.currentlocation", getLocationString(pl.getLocation())));
 
-                messages.add(NucleusPlugin.getNucleus().getMessageProvider().getTextMessageWithFormat("command.seen.canfly", getYesNo(pl.get(Keys.CAN_FLY).orElse(false))));
-                messages.add(NucleusPlugin.getNucleus().getMessageProvider().getTextMessageWithFormat("command.seen.isflying", getYesNo(pl.get(Keys.IS_FLYING).orElse(false))));
+                messages.add(messageProvider.getTextMessageWithFormat("command.seen.canfly", getYesNo(pl.get(Keys.CAN_FLY).orElse(false))));
+                messages.add(messageProvider.getTextMessageWithFormat("command.seen.isflying", getYesNo(pl.get(Keys.IS_FLYING).orElse(false))));
             } else {
                 iqsu.getLastIp().ifPresent(x ->
-                    messages.add(NucleusPlugin.getNucleus().getMessageProvider().getTextMessageWithFormat("command.seen.lastipaddress", x))
+                    messages.add(messageProvider.getTextMessageWithFormat("command.seen.lastipaddress", x))
                 );
 
                 Optional<Location<World>> olw = iqsu.getLogoutLocation();
 
                 if (olw.isPresent()) {
-                    messages.add(NucleusPlugin.getNucleus().getMessageProvider().getTextMessageWithFormat("command.seen.lastlocation", getLocationString(olw.get())));
+                    messages.add(messageProvider.getTextMessageWithFormat("command.seen.lastlocation", getLocationString(olw.get())));
                 }
 
                 user.get(JoinData.class).ifPresent(x -> {
                     Optional<Instant> oi = x.firstPlayed().getDirect();
                     if (oi.isPresent()) {
-                        messages.add(NucleusPlugin.getNucleus().getMessageProvider().getTextMessageWithFormat("command.seen.firstplayed",
+                        messages.add(messageProvider.getTextMessageWithFormat("command.seen.firstplayed",
                                 DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                                         .withLocale(src.getLocale())
                                         .withZone(ZoneId.systemDefault()).format(oi.get())));
@@ -142,12 +144,12 @@ public class SeenCommand extends io.github.nucleuspowered.nucleus.internal.comma
 
         PaginationService ps = Sponge.getServiceManager().provideUnchecked(PaginationService.class);
         ps.builder().contents(messages).padding(Text.of(TextColors.GREEN, "-"))
-                .title(NucleusPlugin.getNucleus().getMessageProvider().getTextMessageWithFormat("command.seen.title", user.getName())).sendTo(src);
+                .title(messageProvider.getTextMessageWithFormat("command.seen.title", user.getName())).sendTo(src);
         return CommandResult.success();
     }
 
     private String getLocationString(Location<World> lw) {
-        return NucleusPlugin.getNucleus().getMessageProvider().getMessageWithFormat("command.seen.locationtemplate", lw.getExtent().getName(), lw.getBlockPosition().toString());
+        return plugin.getMessageProvider().getMessageWithFormat("command.seen.locationtemplate", lw.getExtent().getName(), lw.getBlockPosition().toString());
     }
 
     private String getYesNo(Boolean bool) {

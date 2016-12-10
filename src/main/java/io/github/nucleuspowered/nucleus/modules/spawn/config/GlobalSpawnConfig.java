@@ -7,7 +7,7 @@ package io.github.nucleuspowered.nucleus.modules.spawn.config;
 import ninja.leaping.configurate.objectmapping.Setting;
 import ninja.leaping.configurate.objectmapping.serialize.ConfigSerializable;
 import org.spongepowered.api.Sponge;
-import org.spongepowered.api.world.World;
+import org.spongepowered.api.world.storage.WorldProperties;
 
 import java.util.Optional;
 
@@ -38,10 +38,10 @@ public class GlobalSpawnConfig {
         return onLogin;
     }
 
-    public Optional<World> getWorld() {
-        Optional<World> ow = Sponge.getServer().getWorld(spawnWorld);
+    public Optional<WorldProperties> getWorld() {
+        Optional<WorldProperties> ow = Sponge.getServer().getWorldProperties(spawnWorld);
         if (!ow.isPresent()) {
-            ow = Sponge.getServer().getWorld(Sponge.getServer().getDefaultWorldName());
+            ow = Sponge.getServer().getWorldProperties(Sponge.getServer().getDefaultWorldName());
         }
 
         return ow;

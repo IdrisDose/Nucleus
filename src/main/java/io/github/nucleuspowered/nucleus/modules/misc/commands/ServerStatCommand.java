@@ -34,7 +34,7 @@ import java.util.Optional;
 @NoCooldown
 @NoCost
 @NoWarmup
-@RegisterCommand({"serverstat", "gc"})
+@RegisterCommand({"serverstat", "gc", "uptime"})
 public class ServerStatCommand extends AbstractCommand<CommandSource> {
 
     private static final DecimalFormat tpsFormat = new DecimalFormat("#0.00");

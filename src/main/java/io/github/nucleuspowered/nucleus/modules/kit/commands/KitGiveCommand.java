@@ -108,13 +108,20 @@ public class KitGiveCommand extends AbstractCommand<CommandSource> {
             }
         }
 
-        Tristate tristate = Util.addToStandardInventory(player, kit.getStacks());
+        boolean dropItems = kitConfigAdapter.getNodeOrDefault().isDropKitIfFull();
+        Tristate tristate = Util.addToStandardInventory(player, kit.getStacks(), dropItems);
         if (tristate != Tristate.TRUE) {
-            src.sendMessage(plugin.getMessageProvider().getTextMessageWithFormat("command.kit.give.fullinventory", plugin.getNameUtil().getSerialisedName(player)));
+            if (dropItems) {
+                src.sendMessage(plugin.getMessageProvider()
+                    .getTextMessageWithFormat("command.kit.give.itemsdropped", plugin.getNameUtil().getSerialisedName(player)));
+            } else {
+                src.sendMessage(plugin.getMessageProvider()
+                    .getTextMessageWithFormat("command.kit.give.fullinventory", plugin.getNameUtil().getSerialisedName(player)));
+            }
         }
 
         // If something was consumed, consider a success.
-        if (tristate != Tristate.FALSE) {
+        if (dropItems || tristate != Tristate.FALSE) {
 
             // Register the last used time. Do it for everyone, in case permissions or cooldowns change later
             if (!skip) {

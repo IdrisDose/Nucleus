@@ -118,13 +118,18 @@ public class KitCommand extends io.github.nucleuspowered.nucleus.internal.comman
             }
         }
 
-        Tristate tristate = Util.addToStandardInventory(player, kit.getStacks());
+        boolean dropItems = kca.getNodeOrDefault().isDropKitIfFull();
+        Tristate tristate = Util.addToStandardInventory(player, kit.getStacks(), dropItems);
         if (tristate != Tristate.TRUE) {
-            player.sendMessage(plugin.getMessageProvider().getTextMessageWithFormat("command.kit.fullinventory"));
+            if (dropItems) {
+                player.sendMessage(plugin.getMessageProvider().getTextMessageWithFormat("command.kit.itemsdropped"));
+            } else {
+                player.sendMessage(plugin.getMessageProvider().getTextMessageWithFormat("command.kit.fullinventory"));
+            }
         }
 
         // If something was consumed, consider a success.
-        if (tristate != Tristate.FALSE) {
+        if (dropItems || tristate != Tristate.FALSE) {
             // Charge, if necessary
             if (cost > 0 && econHelper.economyServiceExists()) {
                 econHelper.withdrawFromPlayer(player, cost);

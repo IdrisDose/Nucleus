@@ -8,16 +8,22 @@ import com.google.inject.Inject;
 import io.github.nucleuspowered.nucleus.dataservices.loaders.WorldDataManager;
 import io.github.nucleuspowered.nucleus.internal.annotations.Permissions;
 import io.github.nucleuspowered.nucleus.internal.annotations.RegisterCommand;
+import io.github.nucleuspowered.nucleus.internal.command.ReturnMessageException;
 import io.github.nucleuspowered.nucleus.internal.permissions.PermissionInformation;
 import io.github.nucleuspowered.nucleus.internal.permissions.SuggestedLevel;
 import io.github.nucleuspowered.nucleus.modules.spawn.config.GlobalSpawnConfig;
 import io.github.nucleuspowered.nucleus.modules.spawn.config.SpawnConfigAdapter;
+import io.github.nucleuspowered.nucleus.modules.spawn.events.SendToSpawnEvent;
+import io.github.nucleuspowered.nucleus.modules.spawn.helpers.SpawnHelper;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.CommandElement;
 import org.spongepowered.api.command.args.GenericArguments;
+import org.spongepowered.api.entity.Transform;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.event.cause.Cause;
+import org.spongepowered.api.event.cause.NamedCause;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
@@ -52,24 +58,26 @@ public class SpawnCommand extends io.github.nucleuspowered.nucleus.internal.comm
 
     @Override
     public CommandResult executeCommand(Player src, CommandContext args) throws Exception {
-        Optional<WorldProperties> owp = args.getOne(key);
-        WorldProperties wp;
         GlobalSpawnConfig gsc = sca.getNodeOrDefault().getGlobalSpawn();
-        if (!owp.isPresent()) {
-            if (gsc.isOnSpawnCommand()) {
-                wp = gsc.getWorld().orElse(src.getWorld()).getProperties();
-            } else {
-                wp = src.getWorld().getProperties();
-            }
-        } else {
-            wp = owp.get();
-        }
+        WorldProperties wp = args.<WorldProperties>getOne(key)
+            .orElseGet(() -> gsc.isOnSpawnCommand() ? gsc.getWorld().orElse(src.getWorld().getProperties()) : src.getWorld().getProperties());
 
         Optional<World> ow = Sponge.getServer().getWorld(wp.getUniqueId());
 
         if (!ow.isPresent()) {
             src.sendMessage(plugin.getMessageProvider().getTextMessageWithFormat("command.spawn.noworld"));
             return CommandResult.empty();
+        }
+
+        Transform<World> worldTransform = SpawnHelper.getSpawn(wp, plugin, src);
+
+        SendToSpawnEvent event = new SendToSpawnEvent(worldTransform, src, Cause.of(NamedCause.source(src), NamedCause.owner(plugin)));
+        if (Sponge.getEventManager().post(event)) {
+            if (event.getCancelReason().isPresent()) {
+                throw new ReturnMessageException(plugin.getMessageProvider().getTextMessageWithFormat("command.spawnother.self.failed.reason", event.getCancelReason().get()));
+            }
+
+            throw new ReturnMessageException(plugin.getMessageProvider().getTextMessageWithFormat("command.spawnother.self.failed.noreason"));
         }
 
         // If we don't have a rotation, then use the current rotation
@@ -79,7 +87,6 @@ public class SpawnCommand extends io.github.nucleuspowered.nucleus.internal.comm
             return CommandResult.success();
         }
 
-        src.sendMessage(plugin.getMessageProvider().getTextMessageWithFormat("command.spawn.fail", wp.getWorldName()));
-        return CommandResult.empty();
+        throw new ReturnMessageException(plugin.getMessageProvider().getTextMessageWithFormat("command.spawn.fail", wp.getWorldName()));
     }
 }

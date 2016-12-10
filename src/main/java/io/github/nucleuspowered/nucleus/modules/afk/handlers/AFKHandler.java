@@ -51,8 +51,10 @@ public class AFKHandler {
     private CommandPermissionHandler s = null;
 
     public void stageUserActivityUpdate(Player player) {
-        synchronized (setLock) {
-            staged.add(player);
+        if (player.isOnline()) {
+            synchronized (setLock) {
+                staged.add(player);
+            }
         }
     }
 

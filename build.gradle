@@ -18,6 +18,7 @@ version '0.16.0-6.0-SNAPSHOT'
 
 def mixinversion = '0.15.0-5.0'
 def qsmlDep = "uk.co.drnaylor:quickstart-moduleloader:0.4.0"
+def geoIpDep = 'com.maxmind.geoip2:geoip2:2.8.0'
 def mixinDep = "io.github.nucleuspowered:NucleusMixins:" + mixinversion
 
 defaultTasks 'licenseFormat build'
@@ -55,6 +56,9 @@ dependencies {
 
     compile "com.github.hsyyid:EssentialCmds:v8.1.7"
 
+    // For Geo IP
+    compile geoIpDep
+
     testCompile "junit:junit:4.12"
     testCompile "org.mockito:mockito-all:1.10.19"
     testCompile "org.powermock:powermock-module-junit4:1.6.4"
@@ -67,6 +71,7 @@ license {
     exclude "**/*.info"
     exclude "assets/**"
     exclude "*.properties"
+    exclude "*.txt"
 
     header file('HEADER.txt')
     sourceSets = project.sourceSets
@@ -128,6 +133,15 @@ def private String getGitHash() {
 shadowJar {
     dependencies {
         include(dependency(qsmlDep))
+        include(dependency(geoIpDep))
+        include(dependency("com.maxmind.db:maxmind-db"))
+        include(dependency("com.fasterxml.jackson.core:jackson-core"))
+        include(dependency("com.fasterxml.jackson.core:jackson-databind"))
+        include(dependency("com.fasterxml.jackson.core:jackson-annotations"))
     }
+
+    relocate 'com.maxmind.geoip2', 'io.github.nucleuspowered.relocate.com.maxmind.geoip2'
+    relocate 'com.maxmind.db', 'io.github.nucleuspowered.relocate.com.maxmind.db'
+    relocate 'com.fasterxml.jackson', 'io.github.nucleuspowered.relocate.com.fasterxml.jackson'
 }
 build.dependsOn(shadowJar)

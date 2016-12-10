@@ -5,6 +5,7 @@
 package io.github.nucleuspowered.nucleus.api.data;
 
 import com.flowpowered.math.vector.Vector3d;
+import org.spongepowered.api.entity.Transform;
 import org.spongepowered.api.world.Location;
 import org.spongepowered.api.world.World;
 
@@ -33,6 +34,14 @@ public class LocationData {
 
     public Optional<Location<World>> getLocation() {
         return Optional.ofNullable(location);
+    }
+
+    public Optional<Transform<World>> getTransform() {
+        if (location == null) {
+            return Optional.empty();
+        }
+
+        return Optional.of(new Transform<>(location.getExtent(), location.getPosition(), rotation));
     }
 
     public String toLocationString() {

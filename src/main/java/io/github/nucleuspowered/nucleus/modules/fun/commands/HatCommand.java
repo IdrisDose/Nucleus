@@ -28,6 +28,7 @@ import org.spongepowered.api.text.Text;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RegisterCommand({"hat"})
 @NoCooldown
@@ -60,6 +61,8 @@ public class HatCommand extends io.github.nucleuspowered.nucleus.internal.comman
     @Override
     public CommandResult executeCommand(Player player, CommandContext args) throws Exception {
         Player pl = this.getUserFromArgs(Player.class, player, playerKey, args);
+        Optional<ItemStack> helmetOptional = pl.getHelmet();
+
         ItemStack stack = pl.getItemInHand(HandTypes.MAIN_HAND).orElseThrow(() -> new ReturnMessageException(plugin.getMessageProvider().getTextMessageWithFormat("command.generalerror.handempty")));
         stack.setQuantity(1);
         pl.setHelmet(stack);
@@ -75,6 +78,10 @@ public class HatCommand extends io.github.nucleuspowered.nucleus.internal.comman
                 pl.setItemInHand(HandTypes.MAIN_HAND, null);
             }
         }
+
+        // If the old item can't be placed back in the player inventory, drop the item.
+        helmetOptional.ifPresent(itemStack -> Util.getStandardInventory(pl).offer(itemStack)
+            .getRejectedItems().forEach(x -> Util.dropItemOnFloorAtLocation(x, pl.getWorld(), pl.getLocation().getPosition())));
 
         if (!pl.getUniqueId().equals(player.getUniqueId())) {
             player.sendMessage(plugin.getMessageProvider().getTextMessageWithTextFormat("command.hat.success", plugin.getNameUtil().getName(pl), itemName));

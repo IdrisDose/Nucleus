@@ -43,6 +43,8 @@ import java.util.function.Predicate;
 public class RandomTeleportCommand extends io.github.nucleuspowered.nucleus.internal.command.AbstractCommand<Player> {
 
     private Set<BlockType> prohibitedTypes = null;
+    // Works around a problem in the Sponge implementation.
+    private final Vector3d direction = new Vector3d(0.00001, -1, 0.000001);
 
     private final Random random = new Random();
     @Inject private RTPConfigAdapter rca;
@@ -118,11 +120,20 @@ public class RandomTeleportCommand extends io.github.nucleuspowered.nucleus.inte
 
             int y;
             if (rca.getNodeOrDefault().isMustSeeSky()) {
+                int startY = Math.min(player.getLocation().getExtent().getBlockMax().getY() - 11, maxY);
+                int distance = startY - Math.max(player.getLocation().getExtent().getBlockMin().getY(), minY);
+                if (distance < 0) {
+                    onUnsuccesfulAttempt();
+                    return;
+                }
+
                 // From the x and z co-ordinates, scan down from the top to get the next block.
-                Optional<BlockRayHit<World>> blockRayHitOptional = BlockRay
-                        .from(new Location<>(currentWorld, new Vector3d(x, Math.min(player.getLocation().getExtent().getBlockMax().getY() - 11, maxY), z)))
-                        .to(new Vector3d(x, Math.min(player.getLocation().getExtent().getBlockMax().getY() - 11, minY), z))
-                        .stopFilter(BlockRay.onlyAirFilter()).end();
+                BlockRay<World> blockRay = BlockRay
+                    .from(new Location<>(currentWorld, new Vector3d(x, Math.min(player.getLocation().getExtent().getBlockMax().getY() - 11, maxY), z)))
+                    .direction(direction)
+                    .distanceLimit(distance)
+                    .stopFilter(BlockRay.onlyAirFilter()).build();
+                Optional<BlockRayHit<World>> blockRayHitOptional = blockRay.end();
                 if (blockRayHitOptional.isPresent()) {
                     y = blockRayHitOptional.get().getBlockY();
                 } else {
@@ -141,7 +152,8 @@ public class RandomTeleportCommand extends io.github.nucleuspowered.nucleus.inte
             // getSafeLocation might have put us out of the world border. Best to check.
             // We also check to see that it's not in water or lava, and if enabled, we see if the player would end up on the surface.
             try {
-                if (oSafeLocation.isPresent() && isSafe(oSafeLocation.get()) && Util.isLocationInWorldBorder(oSafeLocation.get())) {
+                if (oSafeLocation.isPresent() && isSafe(oSafeLocation.get()) && Util.isLocationInWorldBorder(oSafeLocation.get())
+                    && isOnSurface(oSafeLocation.get())) {
                     Location<World> tpTarget = oSafeLocation.get();
 
                     plugin.getLogger().debug(String.format("RTP of %s, found location %s, %s, %s", player.getName(),
@@ -167,6 +179,10 @@ public class RandomTeleportCommand extends io.github.nucleuspowered.nucleus.inte
             onUnsuccesfulAttempt();
         }
 
+        private boolean isOnSurface(Location<World> worldLocation) {
+            return isSolid(worldLocation.sub(0, 1, 0)) || isSolid(worldLocation.sub(0, 2, 0));
+        }
+
         private void onUnsuccesfulAttempt() {
             if (count <= 0) {
                 plugin.getLogger().debug(String.format("RTP of %s was unsuccessful", player.getName()));
@@ -180,7 +196,11 @@ public class RandomTeleportCommand extends io.github.nucleuspowered.nucleus.inte
         }
 
         private boolean isSafe(Location<World> location) {
-            return !location.hasBlock() || !isSolid(location) || !getProhibitedTypes().contains(location.getBlockType());
+            return !location.hasBlock() || !isProhibitedBlockType(location) || !isSolid(location);
+        }
+
+        private boolean isProhibitedBlockType(Location<World> location) {
+            return getProhibitedTypes().contains(location.getBlockType());
         }
 
         private Set<BlockType> getProhibitedTypes() {
@@ -198,7 +218,7 @@ public class RandomTeleportCommand extends io.github.nucleuspowered.nucleus.inte
 
         private boolean isSolid(Location<World> location) {
             Optional<MatterProperty> pp = location.getBlockType().getProperty(MatterProperty.class);
-            return pp.isPresent() && pp.get().getValue() != MatterProperty.Matter.SOLID;
+            return pp.isPresent() && pp.get().getValue() == MatterProperty.Matter.SOLID;
         }
 
         @Override

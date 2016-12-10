@@ -146,7 +146,10 @@ public class MessageHandler implements NucleusPrivateMessagingService {
         }
 
         // Add the UUIDs to the reply list - the receiver will now reply to the sender.
-        messagesReceived.put(uuidReceiver, uuidSender);
+        if (!isCancelled) {
+            messagesReceived.put(uuidReceiver, uuidSender);
+        }
+
         return !isCancelled;
     }
 

@@ -146,7 +146,7 @@ public class JailHandler implements NucleusJailService {
         return true;
     }
 
-    public Optional<LocationData> getWarpLocation(Player user) {
+    public Optional<LocationData> getWarpLocation(User user) {
         if (!isPlayerJailed(user)) {
             return Optional.empty();
         }

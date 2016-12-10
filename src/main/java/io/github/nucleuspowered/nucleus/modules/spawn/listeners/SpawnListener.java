@@ -91,8 +91,8 @@ public class SpawnListener extends ListenerBase {
 
             GlobalSpawnConfig sc = sca.getNodeOrDefault().getGlobalSpawn();
             World world = loginEvent.getFromTransform().getExtent();
-            if (sc.isOnLogin()) {
-                world = sc.getWorld().orElse(world);
+            if (sc.isOnLogin() && sc.getWorld().isPresent()) {
+                world = Sponge.getServer().getWorld(sc.getWorld().get().getUniqueId()).orElse(world);
             }
 
             Location<World> lw = world.getSpawnLocation().add(0.5, 0, 0.5);
@@ -128,9 +128,9 @@ public class SpawnListener extends ListenerBase {
 
         // Get the world.
         if (sc.isOnRespawn()) {
-            Optional<World> oworld = sc.getWorld();
+            Optional<WorldProperties> oworld = sc.getWorld();
             if (oworld.isPresent()) {
-                world = oworld.get();
+                world = Sponge.getServer().getWorld(oworld.get().getUniqueId()).orElse(world);
             }
         }
 

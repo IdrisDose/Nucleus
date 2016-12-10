@@ -9,22 +9,25 @@ import io.github.nucleuspowered.nucleus.Nucleus;
 import io.github.nucleuspowered.nucleus.Util;
 import io.github.nucleuspowered.nucleus.api.data.JailData;
 import io.github.nucleuspowered.nucleus.api.data.LocationData;
+import io.github.nucleuspowered.nucleus.api.events.NucleusSendToSpawnEvent;
 import io.github.nucleuspowered.nucleus.dataservices.UserService;
 import io.github.nucleuspowered.nucleus.dataservices.loaders.UserDataManager;
 import io.github.nucleuspowered.nucleus.internal.InternalServiceManager;
 import io.github.nucleuspowered.nucleus.internal.ListenerBase;
-import io.github.nucleuspowered.nucleus.internal.teleport.NucleusTeleportHandler;
+import io.github.nucleuspowered.nucleus.modules.core.events.NucleusOnLoginEvent;
 import io.github.nucleuspowered.nucleus.modules.jail.commands.JailCommand;
 import io.github.nucleuspowered.nucleus.modules.jail.config.JailConfigAdapter;
 import io.github.nucleuspowered.nucleus.modules.jail.handlers.JailHandler;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.action.InteractEvent;
 import org.spongepowered.api.event.block.ChangeBlockEvent;
 import org.spongepowered.api.event.command.SendCommandEvent;
 import org.spongepowered.api.event.entity.living.humanoid.player.RespawnPlayerEvent;
+import org.spongepowered.api.event.filter.Getter;
 import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.event.message.MessageChannelEvent;
 import org.spongepowered.api.event.network.ClientConnectionEvent;
@@ -45,13 +48,34 @@ public class JailListener extends ListenerBase {
     @Inject private JailConfigAdapter jailConfigAdapter;
     @Inject private JailHandler handler;
 
+    @Listener
+    public void onPlayerLogin(final NucleusOnLoginEvent event, @Getter("getTargetUser") User user, @Getter("getUserService") UserService qs) {
+        JailHandler handler = ism.getService(JailHandler.class).get();
+
+        // Jailing the player if we need to.
+        if (qs.jailOnNextLogin() && qs.getJailData().isPresent()) {
+            Optional<LocationData> owl = handler.getWarpLocation(user);
+            if (!owl.isPresent()) {
+                MessageChannel.permission(JailCommand.notifyPermission)
+                    .send(Text.of(TextColors.RED, "WARNING: No jail is defined. Jailed players are going free!"));
+                handler.unjailPlayer(user);
+                return;
+            }
+
+            JailData jd = qs.getJailData().get();
+            jd.setPreviousLocation(event.getFrom().getLocation());
+            qs.setJailData(jd);
+            event.setTo(owl.get().getTransform().get());
+        }
+    }
+
     /**
      * At the time the player joins, check to see if the player is muted.
      *
      * @param event The event.
      */
     @Listener(order = Order.LATE)
-    public void onPlayerLogin(final ClientConnectionEvent.Join event) {
+    public void onPlayerJoin(final ClientConnectionEvent.Join event) {
         final Player user = event.getTargetEntity();
         Optional<UserService> oqs = loader.get(user);
         if (!oqs.isPresent()) {
@@ -63,27 +87,17 @@ public class JailListener extends ListenerBase {
 
         // Jailing the player if we need to.
         if (qs.jailOnNextLogin() && qs.getJailData().isPresent()) {
-            Optional<LocationData> owl = handler.getWarpLocation(user);
-            if (!owl.isPresent()) {
-                MessageChannel.permission(JailCommand.notifyPermission)
-                        .send(Text.of(TextColors.RED, "WARNING: No jail is defined. Jailed players are going free!"));
-                handler.unjailPlayer(user);
-                return;
-            }
-
+            // It exists.
+            LocationData owl = handler.getWarpLocation(user).get();
             JailData jd = qs.getJailData().get();
-            jd.setPreviousLocation(user.getLocation());
-            qs.setJailData(jd);
-            plugin.getTeleportHandler().teleportPlayer(user, owl.get().getLocation().get(), owl.get().getRotation(), NucleusTeleportHandler.TeleportMode.NO_CHECK);
-
             Optional<Duration> timeLeft = jd.getTimeLeft();
             Text message;
-            if (timeLeft.isPresent()) {
-                message = plugin.getMessageProvider().getTextMessageWithFormat("command.jail.jailed", owl.get().getName(), plugin.getNameUtil().getNameFromUUID(jd.getJailer()),
-                        plugin.getMessageProvider().getMessageWithFormat("standard.for"), Util.getTimeStringFromSeconds(timeLeft.get().getSeconds()));
-            } else {
-                message = plugin.getMessageProvider().getTextMessageWithFormat("command.jail.jailed", owl.get().getName(), plugin.getNameUtil().getNameFromUUID(jd.getJailer()), "", "");
-            }
+            message = timeLeft.map(duration -> plugin.getMessageProvider()
+                .getTextMessageWithFormat("command.jail.jailed", owl.getName(), plugin.getNameUtil().getNameFromUUID(jd.getJailer()),
+                    plugin.getMessageProvider().getMessageWithFormat("standard.for"), Util.getTimeStringFromSeconds(duration.getSeconds())))
+                .orElseGet(() -> plugin.getMessageProvider()
+                    .getTextMessageWithFormat("command.jail.jailed", owl.getName(), plugin.getNameUtil().getNameFromUUID(jd.getJailer()), "",
+                        ""));
 
             qs.setFlying(false);
             user.sendMessage(message);
@@ -144,7 +158,15 @@ public class JailListener extends ListenerBase {
         }
     }
 
-    private boolean checkJail(final Player player, boolean sendMessage) {
+    @Listener
+    public void onSendToSpawn(NucleusSendToSpawnEvent event, @Getter("getTargetUser") User user) {
+        if (checkJail(user, false)) {
+            event.setCancelled(true);
+            event.setCancelReason(plugin.getMessageProvider().getMessageWithFormat("jail.isjailed"));
+        }
+    }
+
+    private boolean checkJail(final User player, boolean sendMessage) {
         Optional<UserService> oqs = loader.get(player);
         if (!oqs.isPresent()) {
             return false;
@@ -156,7 +178,7 @@ public class JailListener extends ListenerBase {
         if (omd.isPresent()) {
             if (sendMessage) {
                 qs.setFlying(false);
-                onJail(omd.get(), player);
+                player.getPlayer().ifPresent(x -> onJail(omd.get(), x));
             }
 
             return true;
