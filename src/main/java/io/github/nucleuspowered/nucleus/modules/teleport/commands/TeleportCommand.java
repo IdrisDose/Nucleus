@@ -10,14 +10,12 @@ import io.github.nucleuspowered.nucleus.argumentparsers.NoCostArgument;
 import io.github.nucleuspowered.nucleus.argumentparsers.NoWarmupArgument;
 import io.github.nucleuspowered.nucleus.argumentparsers.TwoPlayersArgument;
 import io.github.nucleuspowered.nucleus.dataservices.loaders.UserDataManager;
-import io.github.nucleuspowered.nucleus.internal.annotations.ConfigCommandAlias;
 import io.github.nucleuspowered.nucleus.internal.annotations.Permissions;
 import io.github.nucleuspowered.nucleus.internal.annotations.RegisterCommand;
 import io.github.nucleuspowered.nucleus.internal.permissions.PermissionInformation;
 import io.github.nucleuspowered.nucleus.internal.permissions.SuggestedLevel;
 import io.github.nucleuspowered.nucleus.modules.teleport.config.TeleportConfigAdapter;
 import io.github.nucleuspowered.nucleus.modules.teleport.handlers.TeleportHandler;
-import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
@@ -32,7 +30,6 @@ import java.util.Optional;
 
 @Permissions(prefix = "teleport", mainOverride = "teleport", suggestedLevel = SuggestedLevel.MOD)
 @RegisterCommand(value = "teleport", rootAliasRegister = "tp")
-@ConfigCommandAlias("teleport")
 public class TeleportCommand extends io.github.nucleuspowered.nucleus.internal.command.AbstractCommand<CommandSource> {
 
     private final String playerFromKey = "playerFrom";
@@ -109,12 +106,5 @@ public class TeleportCommand extends io.github.nucleuspowered.nucleus.internal.c
         }
 
         return CommandResult.empty();
-    }
-
-    @Override
-    public CommentedConfigurationNode getDefaults() {
-        CommentedConfigurationNode ccn = super.getDefaults();
-        ccn.getNode("use-tp-command").setComment(plugin.getMessageProvider().getMessageWithFormat("config.command.teleport.tp")).setValue(true);
-        return ccn;
     }
 }

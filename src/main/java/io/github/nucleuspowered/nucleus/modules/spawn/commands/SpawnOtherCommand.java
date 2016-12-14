@@ -50,7 +50,7 @@ public class SpawnOtherCommand extends AbstractCommand<CommandSource> {
 
     @Override public CommandElement[] getArguments() {
         return new CommandElement[] {
-            GenericArguments.userOrSource(Text.of(otherKey)),
+            GenericArguments.user(Text.of(otherKey)),
             GenericArguments.optional(GenericArguments.world(Text.of(worldKey)))
         };
     }

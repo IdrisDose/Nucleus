@@ -58,7 +58,7 @@ public class HelpOpCommand extends io.github.nucleuspowered.nucleus.internal.com
             return CommandResult.empty();
         }
 
-        Text prefix = chatUtil.getPlayerMessageFromTemplate(mca.getNodeOrDefault().getHelpOpPrefix(), src, false);
+        Text prefix = chatUtil.getMessageFromTemplate(mca.getNodeOrDefault().getHelpOpPrefix(), src, false);
 
         MessageChannel.permission(permissions.getPermissionWithSuffix("receive")).send(src, prefix.concat(Text.of(message)));
         src.sendMessage(plugin.getMessageProvider().getTextMessageWithFormat("command.helpop.success"));

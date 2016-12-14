@@ -24,7 +24,6 @@ import uk.co.drnaylor.quickstart.exceptions.IncorrectAdapterTypeException;
 import uk.co.drnaylor.quickstart.exceptions.NoModuleException;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
 @ConditionalListener(GeoIpListener.Condition.class)
@@ -43,24 +42,14 @@ public class GeoIpListener extends ListenerBase {
 
         Sponge.getScheduler().createAsyncExecutor(plugin).execute(() -> {
             try {
-                CompletableFuture<Optional<Country>> future = handler.getDetails(event.getTargetEntity().getConnection().getAddress().getAddress());
-                future.handleAsync((result, exception) -> {
-                    if (result != null) {
-                        if (result.isPresent()) {
-                            MessageChannel.permission(commandPermissionHandler.getPermissionWithSuffix("login"))
-                                .send(plugin.getMessageProvider().getTextMessageWithFormat("geoip.playerfrom", result.get().getName()));
-                        } else {
-                            MessageChannel.permission(commandPermissionHandler.getPermissionWithSuffix("login"))
-                                .send(plugin.getMessageProvider().getTextMessageWithFormat("geoip.noinfo"));
-                        }
-                    } else if (exception != null) {
-                        if (plugin.isDebugMode()) {
-                            exception.printStackTrace();
-                        }
-                    }
-
-                    return result == null ? Optional.empty() : result;
-                });
+                Optional<Country> result = handler.getDetails(event.getTargetEntity().getConnection().getAddress().getAddress()).get();
+                if (result.isPresent()) {
+                    MessageChannel.permission(commandPermissionHandler.getPermissionWithSuffix("login"))
+                        .send(plugin.getMessageProvider().getTextMessageWithFormat("geoip.playerfrom", event.getTargetEntity().getName(), result.get().getName()));
+                } else {
+                    MessageChannel.permission(commandPermissionHandler.getPermissionWithSuffix("login"))
+                        .send(plugin.getMessageProvider().getTextMessageWithFormat("geoip.noinfo", event.getTargetEntity().getName()));
+                }
             } catch (Exception e) {
                 if (plugin.isDebugMode()) {
                     e.printStackTrace();

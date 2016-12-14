@@ -29,7 +29,7 @@ public class InfoHelper {
     }
 
     public static List<Text> getTextFromStrings(List<String> tfc, CommandSource src, ChatUtil chatUtil) {
-        return chatUtil.getPlayerMessageFromTemplate(tfc, src, true).stream()
+        return chatUtil.getMessageFromTemplate(tfc, src, true).stream()
             .map(x -> chatUtil.addLinksToText(x, src instanceof Player ? (Player)src : null)).collect(Collectors.toList());
     }
 

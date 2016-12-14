@@ -926,7 +926,7 @@ public abstract class AbstractCommand<T extends CommandSource> implements Comman
         aca.ifPresent(a -> {
             String onCommand = a.getNodeOrDefault().getMessages().getOnCommand();
             if (!onCommand.trim().isEmpty()) {
-                src.sendMessage(plugin.getChatUtil().getPlayerMessageFromTemplate(onCommand, player, true));
+                src.sendMessage(plugin.getChatUtil().getMessageFromTemplate(onCommand, player, true));
             }
         });
     }

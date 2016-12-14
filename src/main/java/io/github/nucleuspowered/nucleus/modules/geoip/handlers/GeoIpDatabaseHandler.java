@@ -106,12 +106,12 @@ public class GeoIpDatabaseHandler implements Closeable {
 
     public CompletableFuture<Optional<Country>> getDetails(InetAddress address) throws Exception {
         init();
-        load(LoadType.IF_REQUIRED, true);
 
         final CompletableFuture<Optional<Country>> completableFuture = new CompletableFuture<>();
 
         Sponge.getScheduler().createAsyncExecutor(Nucleus.getNucleus()).execute(() -> {
             try {
+                load(LoadType.IF_REQUIRED, false);
                 int counter = 0;
 
                 // Load check.

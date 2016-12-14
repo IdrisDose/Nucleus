@@ -8,6 +8,7 @@ import io.github.nucleuspowered.nucleus.api.events.NucleusSendToSpawnEvent;
 import org.spongepowered.api.entity.Transform;
 import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.event.cause.Cause;
+import org.spongepowered.api.event.impl.AbstractEvent;
 import org.spongepowered.api.util.annotation.NonnullByDefault;
 import org.spongepowered.api.world.World;
 
@@ -16,7 +17,7 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 @NonnullByDefault
-public class SendToSpawnEvent implements NucleusSendToSpawnEvent {
+public class SendToSpawnEvent extends AbstractEvent implements NucleusSendToSpawnEvent {
 
     private final Transform<World> transform;
     private final User targetUser;

@@ -4,12 +4,9 @@
  */
 package io.github.nucleuspowered.nucleus.modules.chat;
 
-import io.github.nucleuspowered.nucleus.api.service.NucleusJailService;
 import io.github.nucleuspowered.nucleus.internal.qsml.module.ConfigurableModule;
 import io.github.nucleuspowered.nucleus.modules.chat.config.ChatConfigAdapter;
 import io.github.nucleuspowered.nucleus.modules.chat.util.TemplateUtil;
-import io.github.nucleuspowered.nucleus.modules.jail.handlers.JailHandler;
-import org.spongepowered.api.Sponge;
 import uk.co.drnaylor.quickstart.annotations.ModuleData;
 
 @ModuleData(id = "chat", name = "Chat")

@@ -6,6 +6,8 @@ package io.github.nucleuspowered.nucleus.modules.geoip.commands;
 
 import com.google.inject.Inject;
 import com.maxmind.geoip2.record.Country;
+import io.github.nucleuspowered.nucleus.argumentparsers.NicknameArgument;
+import io.github.nucleuspowered.nucleus.dataservices.loaders.UserDataManager;
 import io.github.nucleuspowered.nucleus.internal.annotations.NoCooldown;
 import io.github.nucleuspowered.nucleus.internal.annotations.NoCost;
 import io.github.nucleuspowered.nucleus.internal.annotations.NoWarmup;
@@ -20,7 +22,6 @@ import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.CommandElement;
-import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
 
@@ -37,6 +38,7 @@ import java.util.Optional;
 public class GeoIpCommand extends AbstractCommand<CommandSource> {
 
     @Inject private GeoIpDatabaseHandler databaseHandler;
+    @Inject private UserDataManager userDataManager;
 
     private final String playerKey = "player";
 
@@ -48,16 +50,17 @@ public class GeoIpCommand extends AbstractCommand<CommandSource> {
 
     @Override public CommandElement[] getArguments() {
         return new CommandElement[] {
-            GenericArguments.player(Text.of(playerKey))
+            new NicknameArgument(Text.of(playerKey), userDataManager, NicknameArgument.UnderlyingType.PLAYER)
         };
     }
 
     @Override public CommandResult executeCommand(CommandSource src, CommandContext args) throws Exception {
-        Optional<Country> country = databaseHandler.getDetails(args.<Player>getOne(playerKey).get().getConnection().getAddress().getAddress()).get();
+        Player player = args.<Player>getOne(playerKey).get();
+        Optional<Country> country = databaseHandler.getDetails(player.getConnection().getAddress().getAddress()).get();
         if (country.isPresent()) {
-            src.sendMessage(plugin.getMessageProvider().getTextMessageWithFormat("geoip.playerfrom", country.get().getName()));
+            src.sendMessage(plugin.getMessageProvider().getTextMessageWithFormat("geoip.playerfrom", player.getName(), country.get().getName()));
         } else {
-            src.sendMessage(plugin.getMessageProvider().getTextMessageWithFormat("geoip.noinfo"));
+            src.sendMessage(plugin.getMessageProvider().getTextMessageWithFormat("geoip.noinfo", player.getName()));
         }
 
         return CommandResult.success();

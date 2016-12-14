@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -109,11 +108,11 @@ public class MessageHandler implements NucleusPrivateMessagingService {
         final UUID uuidReceiver = getUUID(receiver);
 
         // Create the tokens.
-        Map<String, BiFunction<CommandSource, String, Text>> tokens = Maps.newHashMap();
-        tokens.put("{{from}}", (cs, g) -> chatUtil.addCommandToName(sender));
-        tokens.put("{{to}}", (cs, g) -> chatUtil.addCommandToName(receiver));
-        tokens.put("{{fromdisplay}}", (cs, g) -> chatUtil.addCommandToDisplayName(sender));
-        tokens.put("{{todisplay}}", (cs, g) -> chatUtil.addCommandToDisplayName(receiver));
+        Map<String, Function<CommandSource, Optional<Text>>> tokens = Maps.newHashMap();
+        tokens.put("from", cs -> Optional.of(chatUtil.addCommandToName(sender)));
+        tokens.put("to", cs -> Optional.of(chatUtil.addCommandToName(receiver)));
+        tokens.put("fromdisplay", cs -> Optional.of(chatUtil.addCommandToDisplayName(sender)));
+        tokens.put("todisplay", cs -> Optional.of(chatUtil.addCommandToDisplayName(receiver)));
 
         Text tm = useMessage(sender, message);
 
@@ -172,8 +171,8 @@ public class MessageHandler implements NucleusPrivateMessagingService {
     }
 
     @SuppressWarnings("unchecked")
-    private Text constructMessage(CommandSource sender, Text message, String template, Map<String, BiFunction<CommandSource, String, Text>> tokens) {
-        return Text.of(chatUtil.getMessageFromTokens(template, sender, false, false, false, tokens), message);
+    private Text constructMessage(CommandSource sender, Text message, String template, Map<String, Function<CommandSource, Optional<Text>>> tokens) {
+        return Text.of(chatUtil.getMessageFromTemplate(template, sender, false, tokens), message);
     }
 
     private Map<String[], Function<String, String>> createReplacements() {

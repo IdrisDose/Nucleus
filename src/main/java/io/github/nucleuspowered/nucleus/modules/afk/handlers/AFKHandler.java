@@ -155,7 +155,7 @@ public class AFKHandler {
                         mc = MessageChannel.permission(getPermissionUtil().getPermissionWithSuffix("notify"));
                     }
 
-                    mc.send(plugin.getChatUtil().getPlayerMessageFromTemplate(messageToServer, x.getFirst(), true));
+                    mc.send(plugin.getChatUtil().getMessageFromTemplate(messageToServer, x.getFirst(), true));
                 }
             });
         }
@@ -203,7 +203,7 @@ public class AFKHandler {
         if (aca.getNodeOrDefault().isAfkOnVanish() || !player.get(Keys.INVISIBLE).orElse(false)) {
             String template = isAfk ? aca.getNodeOrDefault().getMessages().getAfkMessage().trim() : aca.getNodeOrDefault().getMessages().getReturnAfkMessage().trim();
             if (!template.isEmpty()) {
-                MessageChannel.TO_ALL.send(plugin.getChatUtil().getPlayerMessageFromTemplate(template, player, true));
+                MessageChannel.TO_ALL.send(plugin.getChatUtil().getMessageFromTemplate(template, player, true));
             }
         } else {
             // Tell the user in question about them going AFK

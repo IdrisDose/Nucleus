@@ -34,6 +34,7 @@ import org.spongepowered.api.text.action.TextActions;
 import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.format.TextStyles;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -130,7 +131,7 @@ public class InfoCommand extends io.github.nucleuspowered.nucleus.internal.comma
 
             // If there is a title, then add it.
             getTitle(infoHandler.getSection(x).get()).ifPresent(sub ->
-                    tb.append(Text.of(TextColors.GOLD, " - ")).append(chatUtil.getServerMessageFromTemplate(sub, src, true)));
+                    tb.append(Text.of(TextColors.GOLD, " - ")).append(chatUtil.getMessageFromTemplate(sub, src, true)));
 
             s.add(tb.build());
         });
@@ -139,7 +140,7 @@ public class InfoCommand extends io.github.nucleuspowered.nucleus.internal.comma
         PaginationList.Builder pb = ps.builder().contents()
                 .header(plugin.getMessageProvider().getTextMessageWithFormat("command.info.header.default"))
                 .title(plugin.getMessageProvider().getTextMessageWithFormat("command.info.title.default"))
-                .contents(s.stream().sorted((a, b) -> a.toPlain().compareTo(b.toPlain())).collect(Collectors.toList()))
+                .contents(s.stream().sorted(Comparator.comparing(Text::toPlain)).collect(Collectors.toList()))
                 .padding(Text.of(TextColors.GOLD, "-"));
 
         if (src instanceof ConsoleSource) {

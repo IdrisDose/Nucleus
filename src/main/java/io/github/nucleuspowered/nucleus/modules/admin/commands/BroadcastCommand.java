@@ -7,7 +7,12 @@ package io.github.nucleuspowered.nucleus.modules.admin.commands;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import io.github.nucleuspowered.nucleus.ChatUtil;
-import io.github.nucleuspowered.nucleus.internal.annotations.*;
+import io.github.nucleuspowered.nucleus.internal.annotations.NoCooldown;
+import io.github.nucleuspowered.nucleus.internal.annotations.NoCost;
+import io.github.nucleuspowered.nucleus.internal.annotations.NoWarmup;
+import io.github.nucleuspowered.nucleus.internal.annotations.Permissions;
+import io.github.nucleuspowered.nucleus.internal.annotations.RegisterCommand;
+import io.github.nucleuspowered.nucleus.internal.annotations.RunAsync;
 import io.github.nucleuspowered.nucleus.modules.admin.config.AdminConfigAdapter;
 import io.github.nucleuspowered.nucleus.modules.admin.config.BroadcastConfig;
 import org.spongepowered.api.command.CommandResult;
@@ -45,7 +50,7 @@ public class BroadcastCommand extends io.github.nucleuspowered.nucleus.internal.
         ChatUtil.StyleTuple cst = ChatUtil.EMPTY;
         String p = bc.getPrefix();
         if (!p.trim().isEmpty()) {
-            messages.add(chatUtil.getPlayerMessageFromTemplate(p, src, true));
+            messages.add(chatUtil.getMessageFromTemplate(p, src, true));
             cst = chatUtil.getLastColourAndStyle(messages.get(0), ChatUtil.EMPTY);
         }
 
@@ -53,7 +58,7 @@ public class BroadcastCommand extends io.github.nucleuspowered.nucleus.internal.
 
         String s = bc.getSuffix();
         if (!s.trim().isEmpty()) {
-            messages.add(Text.of(cst.colour, cst.style, chatUtil.getPlayerMessageFromTemplate(s, src, true)));
+            messages.add(Text.of(cst.colour, cst.style, chatUtil.getMessageFromTemplate(s, src, true)));
         }
 
         MessageChannel.TO_ALL.send(src, Text.joinWith(Text.of(" "), messages));

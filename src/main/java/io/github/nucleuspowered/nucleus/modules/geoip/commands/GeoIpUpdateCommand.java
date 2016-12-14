@@ -20,7 +20,7 @@ import org.spongepowered.api.command.args.CommandContext;
 @NoCooldown
 @NoCost
 @NoWarmup
-@Permissions
+@Permissions(prefix = "geoip")
 @RegisterCommand(value = "update", subcommandOf = GeoIpCommand.class)
 public class GeoIpUpdateCommand extends AbstractCommand<CommandSource> {
 

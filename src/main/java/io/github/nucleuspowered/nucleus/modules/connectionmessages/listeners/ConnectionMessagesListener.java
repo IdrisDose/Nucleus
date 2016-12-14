@@ -51,7 +51,7 @@ public class ConnectionMessagesListener extends ListenerBase {
             if (loader.getUser(pl).get().isFirstPlay()) {
                 // First time player.
                 if (cmc.isShowFirstTimeMessage() && !cmc.getFirstTimeMessage().isEmpty()) {
-                    MessageChannel.TO_ALL.send(plugin, chatUtil.getPlayerMessageFromTemplate(cmc.getFirstTimeMessage(), pl, true));
+                    MessageChannel.TO_ALL.send(plugin, chatUtil.getMessageFromTemplate(cmc.getFirstTimeMessage(), pl, true));
                 }
             }
         } catch (Exception e) {
@@ -64,7 +64,7 @@ public class ConnectionMessagesListener extends ListenerBase {
             if (cmc.getLoginMessage().isEmpty()) {
                 joinEvent.setMessageCancelled(true);
             } else {
-                joinEvent.setMessage(chatUtil.getPlayerMessageFromTemplate(cma.getNodeOrDefault().getLoginMessage(), pl, true));
+                joinEvent.setMessage(chatUtil.getMessageFromTemplate(cma.getNodeOrDefault().getLoginMessage(), pl, true));
             }
         }
     }
@@ -81,7 +81,7 @@ public class ConnectionMessagesListener extends ListenerBase {
             if (cmc.getLogoutMessage().isEmpty()) {
                 leaveEvent.setMessageCancelled(true);
             } else {
-                leaveEvent.setMessage(chatUtil.getPlayerMessageFromTemplate(cma.getNodeOrDefault().getLogoutMessage(), pl, true));
+                leaveEvent.setMessage(chatUtil.getMessageFromTemplate(cma.getNodeOrDefault().getLogoutMessage(), pl, true));
             }
         }
     }

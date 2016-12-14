@@ -248,7 +248,7 @@ public class Util {
      * @param options The option keys to check.
      * @return An {@link Optional} that might contain a value.
      */
-    public static Optional<String> getOptionFromSubject(User player, String... options) {
+    public static Optional<String> getOptionFromSubject(Subject player, String... options) {
         for (String option : options) {
             String o = option.toLowerCase();
 

@@ -48,6 +48,7 @@ import io.github.nucleuspowered.nucleus.internal.qsml.QuickStartModuleConstructo
 import io.github.nucleuspowered.nucleus.internal.qsml.event.BaseModuleEvent;
 import io.github.nucleuspowered.nucleus.internal.services.WarmupManager;
 import io.github.nucleuspowered.nucleus.internal.teleport.NucleusTeleportHandler;
+import io.github.nucleuspowered.nucleus.internal.text.TokenHandler;
 import io.github.nucleuspowered.nucleus.logging.DebugLogger;
 import io.github.nucleuspowered.nucleus.modules.core.config.CoreConfigAdapter;
 import io.github.nucleuspowered.nucleus.modules.core.events.NucleusReloadConfigEvent;
@@ -109,6 +110,7 @@ public class NucleusPlugin extends Nucleus {
     private List<ThrowableAction<? extends Exception>> reloadableList = Lists.newArrayList();
     private DocGenCache docGenCache = null;
     private NucleusTeleportHandler teleportHandler = new NucleusTeleportHandler();
+    private final TokenHandler tokenHandler = new TokenHandler(this);
 
     private InternalServiceManager serviceManager = new InternalServiceManager(this);
     private MessageProvider messageProvider = new ResourceMessageProvider(ResourceMessageProvider.messagesBundle);
@@ -463,6 +465,10 @@ public class NucleusPlugin extends Nucleus {
     @Override
     public NucleusTeleportHandler getTeleportHandler() {
         return teleportHandler;
+    }
+
+    public TokenHandler getTokenHandler() {
+        return tokenHandler;
     }
 
     @Override public boolean isDebugMode() {
