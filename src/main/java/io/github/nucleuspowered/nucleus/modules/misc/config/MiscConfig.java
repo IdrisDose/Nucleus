@@ -13,7 +13,14 @@ public class MiscConfig {
     @Setting(value = "max-speed", comment = "loc:config.misc.speed.max")
     private int maxSpeed = 5;
 
+    @Setting(value = "require-god-permission-on-login", comment = "loc:config.god.permissiononlogin")
+    private boolean godPermissionOnLogin = false;
+
     public int getMaxSpeed() {
         return maxSpeed;
+    }
+
+    public boolean isGodPermissionOnLogin() {
+        return godPermissionOnLogin;
     }
 }

@@ -24,8 +24,8 @@ import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.CommandElement;
 import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.data.key.Key;
-import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.data.key.Keys;
+import org.spongepowered.api.data.type.HandTypes;
 import org.spongepowered.api.data.value.BaseValue;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.item.ItemType;
@@ -114,15 +114,15 @@ public class ItemInfoCommand extends io.github.nucleuspowered.nucleus.internal.c
         // /buy and /sell prices
         if (econHelper.economyServiceExists() && plugin.getModuleContainer().isModuleLoaded(ServerShopModule.ID)) {
             boolean space = false;
-            int buyPrice = itemDataNode.getServerBuyPrice();
-            if (buyPrice > -1) {
+            double buyPrice = itemDataNode.getServerBuyPrice();
+            if (buyPrice >= 0) {
                 lt.add(Text.EMPTY);
                 lt.add(plugin.getMessageProvider().getTextMessageWithFormat("command.iteminfo.buyprice", econHelper.getCurrencySymbol(buyPrice)));
                 space = true;
             }
 
-            int sellPrice = itemDataNode.getServerSellPrice();
-            if (sellPrice > -1) {
+            double sellPrice = itemDataNode.getServerSellPrice();
+            if (sellPrice >= 0) {
                 if (!space) {
                     lt.add(Text.EMPTY);
                 }

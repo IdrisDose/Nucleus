@@ -300,7 +300,11 @@ public class Util {
     }
 
     public static <T extends CatalogType> String getTranslatableIfPresentOnCatalogType(T ct) {
-        if (ct instanceof Translatable) {
+        if (ct instanceof ItemType) {
+            return ItemStack.of((ItemType)ct, 1).getTranslation().get();
+        } else if (ct instanceof BlockState) {
+            return ItemStack.builder().fromBlockState(((BlockState) ct)).build().getTranslation().get();
+        } else  if (ct instanceof Translatable) {
             return getTranslatableIfPresent((Translatable & CatalogType)ct);
         }
 
@@ -318,6 +322,7 @@ public class Util {
     public static <T extends Translatable & CatalogType> String getTranslatableIfPresent(T translatable) {
         try {
             String result = translatable.getTranslation().get();
+
             if (!result.isEmpty()) {
                 return result;
             }

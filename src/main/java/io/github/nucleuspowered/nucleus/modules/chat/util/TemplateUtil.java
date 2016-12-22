@@ -55,8 +55,6 @@ public class TemplateUtil {
                 .collect(Collectors.toList());
         }
 
-        groups.sort((x, y) -> y.getParents().size() - x.getParents().size());
-
         // For each weight...
         for (Map<String, WeightedChatTemplateConfig> templates : cachedTemplates) {
             // Iterate through all groups the player is in.

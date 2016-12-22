@@ -10,9 +10,10 @@ import io.github.nucleuspowered.nucleus.modules.info.handlers.InfoHandler;
 import org.spongepowered.api.Sponge;
 import uk.co.drnaylor.quickstart.annotations.ModuleData;
 
-@ModuleData(id = "info", name = "Info")
+@ModuleData(id = InfoModule.ID, name = "Info")
 public class InfoModule extends ConfigurableModule<InfoConfigAdapter> {
 
+    public static final String ID = "info";
     public static final String MOTD_KEY = "motd";
 
     @Override

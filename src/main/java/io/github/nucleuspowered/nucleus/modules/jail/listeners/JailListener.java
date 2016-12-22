@@ -125,7 +125,7 @@ public class JailListener extends ListenerBase {
     @Listener
     public void onCommand(SendCommandEvent event, @Root Player player) {
         // Only if the command is not in the control list.
-        if (checkJail(player, false) && !jailConfigAdapter.getNodeOrDefault().getAllowedCommands().stream().anyMatch(x -> event.getCommand().equalsIgnoreCase(x))) {
+        if (checkJail(player, false) && jailConfigAdapter.getNodeOrDefault().getAllowedCommands().stream().noneMatch(x -> event.getCommand().equalsIgnoreCase(x))) {
             event.setCancelled(true);
 
             // This is the easiest way to send the messages.

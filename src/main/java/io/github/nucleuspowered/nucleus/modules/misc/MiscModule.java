@@ -15,6 +15,9 @@ import java.util.Optional;
 
 @ModuleData(id = "misc", name = "Miscellaneous")
 public class MiscModule extends ConfigurableModule<MiscConfigAdapter> {
+
+    public final static String ID = "misc";
+
     @Override
     public MiscConfigAdapter getAdapter() {
         return new MiscConfigAdapter();

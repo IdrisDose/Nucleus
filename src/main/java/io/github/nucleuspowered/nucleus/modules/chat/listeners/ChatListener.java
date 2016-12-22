@@ -7,12 +7,14 @@ package io.github.nucleuspowered.nucleus.modules.chat.listeners;
 import com.google.inject.Inject;
 import io.github.nucleuspowered.nucleus.ChatUtil;
 import io.github.nucleuspowered.nucleus.NameUtil;
+import io.github.nucleuspowered.nucleus.Nucleus;
 import io.github.nucleuspowered.nucleus.Util;
 import io.github.nucleuspowered.nucleus.internal.ListenerBase;
 import io.github.nucleuspowered.nucleus.internal.PermissionRegistry;
+import io.github.nucleuspowered.nucleus.internal.annotations.ConditionalListener;
 import io.github.nucleuspowered.nucleus.internal.permissions.PermissionInformation;
 import io.github.nucleuspowered.nucleus.internal.permissions.SuggestedLevel;
-import io.github.nucleuspowered.nucleus.internal.text.NucleusTokenServiceImpl;
+import io.github.nucleuspowered.nucleus.modules.chat.ChatModule;
 import io.github.nucleuspowered.nucleus.modules.chat.config.ChatConfig;
 import io.github.nucleuspowered.nucleus.modules.chat.config.ChatConfigAdapter;
 import io.github.nucleuspowered.nucleus.modules.chat.config.ChatTemplateConfig;
@@ -23,16 +25,25 @@ import org.spongepowered.api.event.Listener;
 import org.spongepowered.api.event.Order;
 import org.spongepowered.api.event.filter.cause.Root;
 import org.spongepowered.api.event.message.MessageChannelEvent;
+import org.spongepowered.api.event.message.MessageEvent;
 import org.spongepowered.api.text.Text;
-import org.spongepowered.api.text.TextTemplate;
 import org.spongepowered.api.text.serializer.TextSerializers;
+import uk.co.drnaylor.quickstart.exceptions.IncorrectAdapterTypeException;
+import uk.co.drnaylor.quickstart.exceptions.NoModuleException;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
-public class ChatListener extends ListenerBase.Reloadable {
+/**
+ * A listener that modifies all chat messages. Uses the
+ * {@link io.github.nucleuspowered.nucleus.api.service.NucleusMessageTokenService}, which
+ * should be used if tokens need to be registered.
+ */
+@ConditionalListener(ChatListener.Test.class)
+public class ChatListener extends ListenerBase {
 
     private final String prefix = PermissionRegistry.PERMISSIONS_PREFIX + "chat.";
 
@@ -41,17 +52,12 @@ public class ChatListener extends ListenerBase.Reloadable {
     private final ChatConfigAdapter cca;
     private final ChatUtil chatUtil;
     private final TemplateUtil templateUtil;
-    private final NucleusTokenServiceImpl chatService;
-
-    private TextTemplate prefixtt;
-    private TextTemplate suffixtt;
 
     @Inject
-    public ChatListener(ChatUtil chatUtil, ChatConfigAdapter cca, TemplateUtil templateUtil, NucleusTokenServiceImpl chatService) {
+    public ChatListener(ChatUtil chatUtil, ChatConfigAdapter cca, TemplateUtil templateUtil) {
         this.chatUtil = chatUtil;
         this.cca = cca;
         this.templateUtil = templateUtil;
-        this.chatService = chatService;
         replacements = createReplacements();
     }
 
@@ -84,21 +90,34 @@ public class ChatListener extends ListenerBase.Reloadable {
             return;
         }
 
+        MessageEvent.MessageFormatter eventFormatter = event.getFormatter();
         ChatConfig config = cca.getNodeOrDefault();
-        if (!config.isModifychat()) {
-            return;
+        Text rawMessage = eventFormatter.getBody().isEmpty() ? event.getRawMessage() : eventFormatter.getBody().toText();
+
+        Text prefix = Text.EMPTY;
+
+        // Avoid adding <name>.
+        if (!config.isOverwriteEarlyPrefixes() && !eventFormatter.getHeader().toText().toPlain().equalsIgnoreCase("<" + player.getName() + "> ")) {
+            prefix = eventFormatter.getHeader().toText();
         }
 
-        Text rawMessage = event.getRawMessage();
-        ChatTemplateConfig ctc = templateUtil.getTemplate(player);
+        Text footer = config.isOverwriteEarlySuffixes() ? Text.EMPTY : event.getFormatter().getFooter().toText();
+
+        final ChatTemplateConfig ctc;
+        if (config.isUseGroupTemplates()) {
+            ctc = templateUtil.getTemplate(player);
+        } else {
+            ctc = config.getDefaultTemplate();
+        }
+
         event.setMessage(
-                chatUtil.getMessageFromTemplate(ctc.getPrefix(), player, true),
-                useMessage(player, rawMessage, ctc),
-                chatUtil.getMessageFromTemplate(ctc.getSuffix(), player, false));
+                Text.join(prefix, chatUtil.getMessageFromTemplate(ctc.getPrefix(), player, true)),
+                config.isModifyMainMessage() ? useMessage(player, rawMessage, ctc) : rawMessage,
+                Text.join(footer, chatUtil.getMessageFromTemplate(ctc.getSuffix(), player, false)));
     }
 
     private Text useMessage(Player player, Text rawMessage, ChatTemplateConfig chatTemplateConfig) {
-        String m = rawMessage.toPlain();
+        String m = TextSerializers.FORMATTING_CODE.serialize(rawMessage);
 
         for (Map.Entry<String[],  Function<String, String>> r : replacements.entrySet()) {
             // If we don't have the required permission...
@@ -122,9 +141,21 @@ public class ChatListener extends ListenerBase.Reloadable {
         return Text.of(nu.getColourFromString(chatcol), nu.getTextStyleFromString(chatstyle), result);
     }
 
-    @Override public void onReload() throws Exception {
-        // Create the TextTemplate for the prefix
-        prefixtt = TextTemplate.of("{{", "}}", new Object[] { TextSerializers.FORMATTING_CODE.deserialize(cca.getNodeOrDefault().getDefaultTemplate().getPrefix()) } );
-        suffixtt = TextTemplate.of("{{", "}}", new Object[] { TextSerializers.FORMATTING_CODE.deserialize(cca.getNodeOrDefault().getDefaultTemplate().getSuffix()) } );
+    public static class Test implements Predicate<Nucleus> {
+
+        @Override
+        public boolean test(Nucleus nucleus) {
+            try {
+                return nucleus.getModuleContainer()
+                        .getConfigAdapterForModule(ChatModule.ID, ChatConfigAdapter.class)
+                        .getNodeOrDefault().isModifychat();
+            } catch (NoModuleException | IncorrectAdapterTypeException e) {
+                if (nucleus.isDebugMode()) {
+                    e.printStackTrace();
+                }
+
+                return false;
+            }
+        }
     }
 }

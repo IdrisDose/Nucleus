@@ -39,14 +39,10 @@ public class SellCommand extends io.github.nucleuspowered.nucleus.internal.comma
         ItemStack is = src.getItemInHand(HandTypes.MAIN_HAND).orElseThrow(() -> new ReturnMessageException(plugin.getMessageProvider().getTextMessageWithFormat("command.generalerror.handempty")));
         String id;
         Optional<BlockState> blockState = is.get(Keys.ITEM_BLOCKSTATE);
-        if (blockState.isPresent()) {
-            id = blockState.get().getId().toLowerCase();
-        } else {
-            id = is.getItem().getId();
-        }
+        id = blockState.map(blockState1 -> blockState1.getId().toLowerCase()).orElseGet(() -> is.getItem().getId());
 
         ItemDataNode node = itemDataService.getDataForItem(id);
-        final int sellPrice = node.getServerSellPrice();
+        final double sellPrice = node.getServerSellPrice();
         if (sellPrice < 0) {
             src.sendMessage(plugin.getMessageProvider().getTextMessageWithFormat("command.itemsell.notforselling"));
             return CommandResult.empty();
@@ -54,7 +50,7 @@ public class SellCommand extends io.github.nucleuspowered.nucleus.internal.comma
 
         // Get the cost.
         final int amt = is.getQuantity();
-        final int overallCost = sellPrice * amt;
+        final double overallCost = sellPrice * amt;
         if (econHelper.depositInPlayer(src, overallCost, false)) {
             src.setItemInHand(HandTypes.MAIN_HAND, null);
             src.sendMessage(plugin.getMessageProvider().getTextMessageWithFormat("command.itemsell.summary", String.valueOf(amt), is.getTranslation().get(), econHelper.getCurrencySymbol(overallCost)));

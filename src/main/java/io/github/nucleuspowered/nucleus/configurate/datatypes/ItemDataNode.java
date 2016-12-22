@@ -25,7 +25,7 @@ public class ItemDataNode {
 
     public ItemDataNode() {}
 
-    public ItemDataNode(Set<String> aliases, int buy, int sell) {
+    public ItemDataNode(Set<String> aliases, double buy, double sell) {
         this.aliases = aliases;
         this.shop = new PriceNode(buy, sell);
     }
@@ -66,19 +66,19 @@ public class ItemDataNode {
         aliases.clear();
     }
 
-    public int getServerBuyPrice() {
+    public double getServerBuyPrice() {
         return shop.getBuy();
     }
 
-    public void setServerBuyPrice(int serverBuyPrice) {
+    public void setServerBuyPrice(double serverBuyPrice) {
         shop.setBuy(serverBuyPrice);
     }
 
-    public int getServerSellPrice() {
+    public double getServerSellPrice() {
         return shop.getSell();
     }
 
-    public void setServerSellPrice(int serverSellPrice) {
+    public void setServerSellPrice(double serverSellPrice) {
         shop.setSell(serverSellPrice);
     }
 

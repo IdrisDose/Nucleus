@@ -9,8 +9,10 @@ import io.github.nucleuspowered.nucleus.modules.chat.config.ChatConfigAdapter;
 import io.github.nucleuspowered.nucleus.modules.chat.util.TemplateUtil;
 import uk.co.drnaylor.quickstart.annotations.ModuleData;
 
-@ModuleData(id = "chat", name = "Chat")
+@ModuleData(id = ChatModule.ID, name = "Chat")
 public class ChatModule extends ConfigurableModule<ChatConfigAdapter> {
+
+    public final static String ID = "chat";
 
     @Override
     public ChatConfigAdapter getAdapter() {

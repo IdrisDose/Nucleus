@@ -634,4 +634,12 @@ public class UserService extends Service<UserDataNode>
             return null;
         }
     }
+
+    public boolean isCommandSpy() {
+        return data.isCommandSpy();
+    }
+
+    public void setCommandSpy(boolean set) {
+        data.setCommandSpy(set);
+    }
 }

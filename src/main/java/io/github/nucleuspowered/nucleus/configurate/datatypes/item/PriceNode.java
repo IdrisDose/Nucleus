@@ -14,30 +14,30 @@ public class PriceNode {
         this(-1, -1);
     }
 
-    public PriceNode(int buy, int sell) {
+    public PriceNode(double buy, double sell) {
         this.buy = buy;
         this.sell = sell;
     }
 
     @Setting
-    private int buy = -1;
+    private double buy = -1;
 
     @Setting
-    private int sell = -1;
+    private double sell = -1;
 
-    public int getBuy() {
+    public double getBuy() {
         return buy;
     }
 
-    public void setBuy(int buy) {
+    public void setBuy(double buy) {
         this.buy = buy;
     }
 
-    public int getSell() {
+    public double getSell() {
         return sell;
     }
 
-    public void setSell(int sell) {
+    public void setSell(double sell) {
         this.sell = sell;
     }
 }

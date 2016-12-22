@@ -14,6 +14,9 @@ public class MotdConfig {
     @Setting(value = "show-motd-on-join", comment = "loc:config.motd.onjoin")
     private boolean showMotdOnJoin = true;
 
+    @Setting(value = "motd-login-delay", comment = "loc:config.motd.delay")
+    private float delay = 0.5f;
+
     @Setting(value = "motd-title", comment = "loc:config.motd.title")
     private String motdTitle = Nucleus.getNucleus().getMessageProvider().getMessageWithFormat("motd.title");
 
@@ -30,5 +33,9 @@ public class MotdConfig {
 
     public boolean isUsePagination() {
         return usePagination;
+    }
+
+    public float getDelay() {
+        return delay;
     }
 }

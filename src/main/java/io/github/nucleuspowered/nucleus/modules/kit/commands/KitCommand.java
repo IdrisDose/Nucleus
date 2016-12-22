@@ -4,6 +4,7 @@
  */
 package io.github.nucleuspowered.nucleus.modules.kit.commands;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import io.github.nucleuspowered.nucleus.Util;
@@ -16,6 +17,7 @@ import io.github.nucleuspowered.nucleus.internal.PermissionRegistry;
 import io.github.nucleuspowered.nucleus.internal.annotations.NoCost;
 import io.github.nucleuspowered.nucleus.internal.annotations.Permissions;
 import io.github.nucleuspowered.nucleus.internal.annotations.RegisterCommand;
+import io.github.nucleuspowered.nucleus.internal.command.ReturnMessageException;
 import io.github.nucleuspowered.nucleus.internal.permissions.PermissionInformation;
 import io.github.nucleuspowered.nucleus.internal.permissions.SuggestedLevel;
 import io.github.nucleuspowered.nucleus.modules.kit.config.KitConfigAdapter;
@@ -25,11 +27,16 @@ import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.CommandElement;
 import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.item.inventory.Inventory;
+import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Tristate;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -118,9 +125,30 @@ public class KitCommand extends io.github.nucleuspowered.nucleus.internal.comman
             }
         }
 
+        boolean mustConsumeAll = kca.getNodeOrDefault().isMustGetAll();
         boolean dropItems = kca.getNodeOrDefault().isDropKitIfFull();
-        Tristate tristate = Util.addToStandardInventory(player, kit.getStacks(), dropItems);
+
+        List<Optional<ItemStackSnapshot>> slotList = Lists.newArrayList();
+        Util.getStandardInventory(player).slots().forEach(x -> slotList.add(x.peek().map(ItemStack::createSnapshot)));
+
+        Tristate tristate = Util.addToStandardInventory(player, kit.getStacks(), !mustConsumeAll && dropItems);
         if (tristate != Tristate.TRUE) {
+            if (mustConsumeAll) {
+                Inventory inventory = Util.getStandardInventory(player);
+                inventory.clear();
+
+                // Slots
+                Iterator<Inventory> slot = inventory.slots().iterator();
+
+                // Slots to restore
+                slotList.forEach(x -> {
+                    Inventory i = slot.next();
+                    x.ifPresent(y -> i.offer(y.createStack()));
+                });
+
+                throw new ReturnMessageException(plugin.getMessageProvider().getTextMessageWithFormat("command.kit.fullinventorynosave", kitName));
+            }
+
             if (dropItems) {
                 player.sendMessage(plugin.getMessageProvider().getTextMessageWithFormat("command.kit.itemsdropped"));
             } else {

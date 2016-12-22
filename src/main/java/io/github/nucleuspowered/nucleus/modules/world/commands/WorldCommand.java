@@ -18,7 +18,7 @@ import org.spongepowered.api.command.args.CommandContext;
  *
  */
 @Permissions(suggestedLevel = SuggestedLevel.ADMIN)
-@RegisterCommand(value = "world", hasExecutor = false)
+@RegisterCommand(value = "world", rootAliasRegister = { "nworld", "nucleusworld" }, hasExecutor = false)
 public class WorldCommand extends io.github.nucleuspowered.nucleus.internal.command.AbstractCommand<CommandSource> {
 
     @Override

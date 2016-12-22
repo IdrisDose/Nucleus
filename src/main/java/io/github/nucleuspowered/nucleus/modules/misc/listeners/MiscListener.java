@@ -5,6 +5,7 @@
 package io.github.nucleuspowered.nucleus.modules.misc.listeners;
 
 import com.google.inject.Inject;
+import io.github.nucleuspowered.nucleus.api.data.NucleusUser;
 import io.github.nucleuspowered.nucleus.dataservices.loaders.UserDataManager;
 import io.github.nucleuspowered.nucleus.internal.ListenerBase;
 import io.github.nucleuspowered.nucleus.modules.core.config.CoreConfigAdapter;
@@ -22,22 +23,10 @@ public class MiscListener extends ListenerBase {
     // For /god
     @Listener
     public void onPlayerStruck(DamageEntityEvent event, @Getter("getTargetEntity") Player pl) {
-        if (isInvulnerable(pl)) {
+        if (ucl.getUser(pl).map(NucleusUser::isInvulnerable).orElse(false)) {
             pl.offer(Keys.FIRE_TICKS, 0);
             event.setBaseDamage(0);
             event.setCancelled(true);
-        }
-    }
-
-    private boolean isInvulnerable(Player pl) {
-        try {
-            return ucl.getUser(pl).get().isInvulnerable();
-        } catch (Exception e) {
-            if (cca.getNodeOrDefault().isDebugmode()) {
-                e.printStackTrace();
-            }
-
-            return false;
         }
     }
 }

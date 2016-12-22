@@ -6,6 +6,7 @@ package io.github.nucleuspowered.nucleus.argumentparsers;
 
 import com.google.common.base.Preconditions;
 import io.github.nucleuspowered.nucleus.Nucleus;
+import io.github.nucleuspowered.nucleus.internal.CommandPermissionHandler;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.ArgumentParseException;
@@ -16,22 +17,25 @@ import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.text.Text;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nullable;
 
 public class TwoPlayersArgument extends CommandElement {
 
     private final Text key;
     private final Text key2;
+    private final CommandPermissionHandler handler;
 
-    public TwoPlayersArgument(@Nullable Text key, Text key2) {
+    public TwoPlayersArgument(@Nullable Text key, Text key2, CommandPermissionHandler handler) {
         super(key);
         Preconditions.checkNotNull(key);
         Preconditions.checkNotNull(key2);
         this.key = key;
         this.key2 = key2;
+        this.handler = handler;
     }
 
     @Nullable
@@ -44,17 +48,27 @@ public class TwoPlayersArgument extends CommandElement {
     public void parse(CommandSource source, CommandArgs args, CommandContext context) throws ArgumentParseException {
         String sp1 = args.next();
         Optional<String> osp2 = args.nextIfPresent();
-
         if (!osp2.isPresent()) {
             throw args.createError(Nucleus.getNucleus().getMessageProvider().getTextMessageWithFormat("args.twoplayer.notenough"));
         }
 
         String sp2 = osp2.get();
 
-        context.putArg(key.toPlain(),
+        if (sp1.startsWith("@")) {
+            context.putArg(key.toPlain(),
+                SelectorWrapperArgument.parseValue(source, args, handler, SelectorWrapperArgument.SINGLE_PLAYER_SELECTORS, sp1));
+        } else {
+            context.putArg(key.toPlain(),
                 getPlayerFromPartialName(sp1).orElseThrow(() -> args.createError(Nucleus.getNucleus().getMessageProvider().getTextMessageWithFormat("args.twoplayer.noexist", sp1))));
-        context.putArg(key2.toPlain(),
-                getPlayerFromPartialName(sp2).orElseThrow(() -> args.createError(Nucleus.getNucleus().getMessageProvider().getTextMessageWithFormat("args.twoplayer.noexist", sp2))));
+        }
+
+        if (sp2.startsWith("@")) {
+            context.putArg(key2.toPlain(),
+                SelectorWrapperArgument.parseValue(source, args, handler, SelectorWrapperArgument.SINGLE_PLAYER_SELECTORS, sp2));
+        } else {
+            context.putArg(key2.toPlain(),
+                getPlayerFromPartialName(sp2).orElseThrow(() -> args.createError(Nucleus.getNucleus().getMessageProvider().getTextMessageWithFormat("args.twoplayer.noexist", sp1))));
+        }
     }
 
     @Override

@@ -17,12 +17,12 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.action.TextActions;
 import uk.co.drnaylor.quickstart.annotations.ModuleData;
 
-
-@ModuleData(id = "note", name = "Note")
+@ModuleData(id = NoteModule.ID, name = "Note")
 public class NoteModule extends ConfigurableModule<NoteConfigAdapter> {
 
-    @Inject
-    private Game game;
+    public final static String ID = "note";
+
+    @Inject private Game game;
     @Inject private Logger logger;
 
     @Override

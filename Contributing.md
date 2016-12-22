@@ -43,34 +43,46 @@ As Nucleus is a big plugin, there are some fancy tricks involved to make the sys
 heavy use of annotations and auto-generation of permissions. Though it can seem intimidating at first, it's actually an easy
 system if you don't have to touch the internals!
 
+#### Creating Modules
+
 If you are creating a new module, the following should be kept in mind:
 
 * Create a new package with the name of the module. The name should be singular.
 
-* Create a class that extends `StandardModule`, annotate it with `@ModuleData` and give it a name and id. The id should be the same as the package name. Tests enforce the use of this annotation.
+* If your module does not have any config involved, create a class that extends `StandardModule`, annotate it with `@ModuleData` and give it a name and id. The id should be the same as the package name. Tests enforce the use of this annotation.
 
 * If the module has some config involved:
+    * Create a class that extends `ConfigurableModule<>`, where the generic type is the `NucleusConfigAdapter` you'll create, annotate it with `@ModuleData` and give it a name and id. The id should be the same as, or similar to, the package name. Tests enforce the use of this annotation. The method you are required to extend _should_ create a new instance of the config adapter.
     * Create a new Config class that mirrors your config structure using `@ConfigSerializable` and `@Setting` annotations from Configurate.
     * Create a class that extends the `NucleusConfigAdapter` to manage this config class.
     * If you have any services that need to be registered, they can be done in the `performPreTasks` method on `StandardModule`, [see the AFK module for a good example](https://github.com/NucleusPowered/Nucleus/blob/master/src/main/java/io/github/nucleuspowered/nucleus/modules/afk/AFKModule.java).
  
 * Put commands, listeners and runnables in sub packages - they will be registered automatically if they are of the correct base classes - see below.
 
-For an example of adding a module with config, see [this commit for adding /spawnmob](https://github.com/NucleusPowered/Nucleus/commit/3c071f5b743c1cb1e965214107a99b594444b3e6)
+For an example of adding a module with config, see [this commit for adding /commandspy and related module/listeners](https://github.com/NucleusPowered/Nucleus/commit/d31a860daef687ebeeb729c51a92cf6959daf8f1)
 
 If you think there is a bug with the module loader itself (package, `uk.co.drnaylor.quickstart`, please file a bug on the [QuickStart Module Loader](https://github.com/NucleusPowered/QuickStartModuleLoader) pages instead.
 
+#### Commands
+
 If you are developing a command, please keep the following in mind:
 
-* ALWAYS use the `CommandBase<>` class. It contains a lot of scaffolding that the plugin loader requires. Do not use the `AbstractCommand<>` class.
-* If your command requires arguments, override the `CommandElement[] getArguemnts()` method, and return an array of arguments.
-* Please add a description for your command - add it to the `messages.properties` file with the key
-`description.[parentcommand alias].[primary command alias].desc`.
+* ALWAYS use the `AbstractCommand<>` class. It contains a lot of scaffolding that the plugin loader requires.
+* If your command requires arguments, override the `CommandElement[] getArguements()` method, and return an array of arguments.
+* Please add a one-line description for your command - add it to the `command.properties` file with the key
+`[parentcommand alias].[primary command alias].desc`. Also consider adding an extended description, use the key `[parentcommand alias].[primary command alias].extended`.
     * The parent command alias is only required if the command is a subcommand - it is a period separated path to the sub command.
-* If you require one of the Nucleus handlers/services - check to see if it can be injected. using the `@Inject` annotation.
-The plugin object is always injected into a protected variable and does not need to be done again.
+* If you require one of the Nucleus handlers/services - check to see if it can be injected, using the `@Inject` annotation, or check if it is available from the plugin object. The plugin object is always injected into a protected variable and does not need to be done again.
 
-Listeners and Runnable Tasks extend the `ListenerBase` and `TaskBase` classes, respectively. They will have the Nucleus plugin instance injected automatically, but you are able to use other injections on these classes too.
+#### Listeners
+
+If you are creating a listener, ensure that the listener class(es) extend the `ListenerBase` class, this will allow you to access the injected `plugin` variable. If you want something in the class to reload when the configuration is reloaded, extend the `ListenerBase.Reloadable` class instead. Other injections can be used on this class.
+
+If your listeners are only going to fire under certain conditions that will only be altered by a configuration reload, create a static, no-arg constructor inner class that extends `Predicate<Nucleus>` which tests the conditions for whether the listener should be registered. Then, annotate your listener with `@ConditionalListener`, where the argument is the class reference to your inner class. See [the Command Spy listener](https://github.com/NucleusPowered/Nucleus/blob/sponge-api/5/src/main/java/io/github/nucleuspowered/nucleus/modules/commandspy/listeners/CommandSpyListener.java#L37) for an example of this.
+
+#### Repeatable Tasks
+
+Runnable Tasks extend `TaskBase` classes. They will have the Nucleus plugin instance injected automatically, but you are able to use other injections on these classes too.
 
 The key rule here is - if you are unsure as to how something works, **please** ask us! We are more than willing to help you as much as possible!
 
@@ -120,16 +132,12 @@ to ours.
 ### Code Conventions
 * Return `java.util.Optional<>` if you are adding an API method that could return `null`.
 * Only one declaration per line.
-* All uppercase letters for a constant variable. Multiple words should be
-separated with an underscore - `_`.
+* All uppercase letters for a constant variable. Multiple words should be separated with an underscore - `_`.
 
 ### Submitting your Pull Requests
 In your PRs, please make sure you fulfil the following:
 
 * Provide a justification for the change - is it a new feature or a fix to a bug?
     * Please note that we will reject features that are not deemed as "essential".
-* Before sending a pull request ensure that your branch is up to date with the
-branch you are targeting. This should normally be master.
-* Do not squash commits unless directed to do so, but please _rebase_ your changes on
-top of master when you feel your changes are ready to be submitted - _do not merge_.
-We will squash the commits in a way we feel logical.
+* Before sending a pull request ensure that your branch is up to date with the branch you are targeting. This should normally be `sponge-api/n`.
+* Do not squash commits unless directed to do so, but please _rebase_ your changes on top of master when you feel your changes are ready to be submitted - _do not merge_. We will squash the commits in a way we feel logical.

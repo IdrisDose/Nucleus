@@ -30,6 +30,7 @@ import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.channel.MessageChannel;
 import org.spongepowered.api.text.channel.type.PermissionMessageChannel;
 import org.spongepowered.api.text.chat.ChatType;
+import org.spongepowered.api.text.chat.ChatTypes;
 import org.spongepowered.api.text.serializer.TextSerializers;
 
 import java.time.Instant;
@@ -48,6 +49,15 @@ public class MuteListener extends ListenerBase {
     @Inject private MuteConfigAdapter mca;
     @Inject private PermissionRegistry permissionRegistry;
     private CommandPermissionHandler cph;
+    private AdminChannel adminChannel;
+
+    private AdminChannel getAdminChannel() {
+        if (adminChannel == null) {
+            adminChannel = new AdminChannel();
+        }
+
+        return adminChannel;
+    }
 
     /**
      * At the time the player joins, check to see if the player is muted.
@@ -91,11 +101,8 @@ public class MuteListener extends ListenerBase {
         Set<String> cmd;
 
         // If the command exists, then get all aliases.
-        if (oc.isPresent()) {
-            cmd = oc.get().getAllAliases().stream().map(String::toLowerCase).collect(Collectors.toSet());
-        } else {
-            cmd = Sets.newHashSet(command);
-        }
+        cmd = oc.map(commandMapping -> commandMapping.getAllAliases().stream().map(String::toLowerCase).collect(Collectors.toSet()))
+            .orElseGet(() -> Sets.newHashSet(command));
 
         // If the command is in the list, block it.
         if (commands.stream().map(String::toLowerCase).anyMatch(cmd::contains)) {
@@ -109,7 +116,7 @@ public class MuteListener extends ListenerBase {
         }
     }
 
-    @Listener(order = Order.FIRST)
+    @Listener(order = Order.LAST)
     public void onPlayerChat(MessageChannelEvent.Chat event, @Root Player player) {
         boolean cancel = false;
         Optional<MuteData> omd = Util.testForEndTimestamp(handler.getPlayerMuteData(player), () -> handler.unmutePlayer(player));
@@ -127,10 +134,10 @@ public class MuteListener extends ListenerBase {
         if (cancel) {
             if (mca.getNodeOrDefault().isShowMutedChat()) {
                 // Send it to admins only.
-                event.setChannel(new AdminChannel());
-            } else {
-                event.setCancelled(true);
+                getAdminChannel().send(player, event.getMessage(), ChatTypes.SYSTEM);
             }
+
+            event.setCancelled(true);
         }
     }
 
@@ -203,7 +210,7 @@ public class MuteListener extends ListenerBase {
 
     private class AdminChannel extends PermissionMessageChannel {
 
-        public AdminChannel() {
+        private AdminChannel() {
             super(MuteCommand.getMutedChatPermission());
         }
 

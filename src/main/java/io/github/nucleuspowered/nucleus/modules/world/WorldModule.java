@@ -5,16 +5,19 @@
 package io.github.nucleuspowered.nucleus.modules.world;
 
 import com.google.inject.Inject;
-import io.github.nucleuspowered.nucleus.internal.qsml.module.StandardModule;
+import io.github.nucleuspowered.nucleus.internal.qsml.module.ConfigurableModule;
+import io.github.nucleuspowered.nucleus.modules.world.config.WorldConfigAdapter;
 import org.slf4j.Logger;
-import org.spongepowered.api.Game;
 import uk.co.drnaylor.quickstart.annotations.ModuleData;
 
 @ModuleData(id = "world", name = "World")
-public class WorldModule extends StandardModule {
+public class WorldModule extends ConfigurableModule<WorldConfigAdapter> {
 
-    @Inject private Game game;
     @Inject private Logger logger;
+
+    @Override public WorldConfigAdapter getAdapter() {
+        return new WorldConfigAdapter();
+    }
 
     @Override
     protected void performPreTasks() throws Exception {

@@ -91,6 +91,9 @@ public class UserDataNode {
     @Setting
     private LocationNode lastLocation;
 
+    @Setting
+    private boolean isCommandSpy = false;
+
     public MuteData getMuteData() {
         return muteData;
     }
@@ -270,5 +273,13 @@ public class UserDataNode {
 
     public void setIpaddress(String ipaddress) {
         this.ipaddress = ipaddress;
+    }
+
+    public boolean isCommandSpy() {
+        return isCommandSpy;
+    }
+
+    public void setCommandSpy(boolean commandSpy) {
+        isCommandSpy = commandSpy;
     }
 }

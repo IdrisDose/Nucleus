@@ -6,6 +6,7 @@ package io.github.nucleuspowered.nucleus.modules.misc.runnables;
 
 import com.google.inject.Inject;
 import io.github.nucleuspowered.nucleus.NucleusPlugin;
+import io.github.nucleuspowered.nucleus.api.data.NucleusUser;
 import io.github.nucleuspowered.nucleus.dataservices.loaders.UserDataManager;
 import io.github.nucleuspowered.nucleus.internal.TaskBase;
 import io.github.nucleuspowered.nucleus.modules.core.config.CoreConfigAdapter;
@@ -41,21 +42,9 @@ public class GodRunnable extends TaskBase {
     @Override
     public void accept(Task task) {
         Collection<Player> cp = Sponge.getServer().getOnlinePlayers();
-        List<Player> toFeed = cp.stream().filter(this::isInvulnerable).collect(Collectors.toList());
+        List<Player> toFeed = cp.stream().filter(x -> ucl.getUser(x).map(NucleusUser::isInvulnerable).orElse(false)).collect(Collectors.toList());
         if (!toFeed.isEmpty()) {
             Sponge.getScheduler().createSyncExecutor(plugin).execute(() -> toFeed.forEach(p -> p.offer(Keys.FOOD_LEVEL, Integer.MAX_VALUE)));
-        }
-    }
-
-    private boolean isInvulnerable(Player pl) {
-        try {
-            return ucl.getUser(pl).get().isInvulnerable();
-        } catch (Exception e) {
-            if (cca.getNodeOrDefault().isDebugmode()) {
-                e.printStackTrace();
-            }
-
-            return false;
         }
     }
 }

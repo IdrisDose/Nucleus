@@ -44,4 +44,50 @@ public interface NucleusMessageTokenService {
      * @return <code>true</code> if successful.
      */
     boolean unregisterAll(PluginContainer pluginContainer);
+
+    /**
+     * Gets the function applied for the specified token, if it exists.
+     *
+     * @param plugin The {@link PluginContainer} that registered the token.
+     * @param token The ID of the token.
+     * @return The {@link Function} that is run for the token, if it exists.
+     */
+    default Optional<Function<CommandSource, Optional<Text>>> getToken(PluginContainer plugin, String token) {
+        return getToken(plugin.getId().toLowerCase(), token);
+    }
+
+    /**
+     * Gets the function applied for the specified token, if it exists.
+     *
+     * @param plugin The ID of the plugin that registered the token.
+     * @param token The ID of the token.
+     * @return The {@link Function} that is run for the token, if it exists.
+     */
+    Optional<Function<CommandSource, Optional<Text>>> getToken(String plugin, String token);
+
+    /**
+     * Gets the result of a token's registered {@link Function} on a {@link CommandSource}
+     *
+     * @param plugin The ID of the plugin that registered the token.
+     * @param token The ID of the token.
+     * @param source The {@link CommandSource} to perform the operation with.
+     * @return The {@link Text}, if any.
+     */
+    default Optional<Text> applyToken(String plugin, String token, CommandSource source) {
+        Optional<Function<CommandSource, Optional<Text>>> tokenFunction = getToken(plugin, token);
+        if (tokenFunction.isPresent()) {
+            return tokenFunction.get().apply(source);
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Uses Nucleus' parser to format a string that uses Minecraft colour codes.
+     *
+     * @param input The input.
+     * @param source The {@link CommandSource} that will view the message.
+     * @return The {@link Text} that represents the output.
+     */
+    Text formatAmpersandEncodedStringWithTokens(String input, CommandSource source);
 }

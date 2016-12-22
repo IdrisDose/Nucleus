@@ -8,7 +8,12 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import io.github.nucleuspowered.nucleus.Nucleus;
-import io.github.nucleuspowered.nucleus.argumentparsers.selectors.*;
+import io.github.nucleuspowered.nucleus.argumentparsers.selectors.AllPlayers;
+import io.github.nucleuspowered.nucleus.argumentparsers.selectors.AllPlayersFromWorld;
+import io.github.nucleuspowered.nucleus.argumentparsers.selectors.NearestPlayer;
+import io.github.nucleuspowered.nucleus.argumentparsers.selectors.NearestPlayerFromSpecifiedLocation;
+import io.github.nucleuspowered.nucleus.argumentparsers.selectors.RandomPlayer;
+import io.github.nucleuspowered.nucleus.argumentparsers.selectors.RandomPlayerFromWorld;
 import io.github.nucleuspowered.nucleus.internal.CommandPermissionHandler;
 import io.github.nucleuspowered.nucleus.internal.interfaces.SelectorParser;
 import org.spongepowered.api.command.CommandSource;
@@ -18,11 +23,12 @@ import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.CommandElement;
 import org.spongepowered.api.text.Text;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class SelectorWrapperArgument extends CommandElement {
 
@@ -47,6 +53,24 @@ public class SelectorWrapperArgument extends CommandElement {
                 .build();
     }
 
+    public static Object parseValue(CommandSource source, CommandArgs args, CommandPermissionHandler handler, Collection<SelectorParser<?>> selectors,
+        String selectorRaw) throws ArgumentParseException {
+
+        Preconditions.checkArgument(selectorRaw.startsWith("@"));
+
+        if (!handler.testSelectors(source)) {
+            throw args.createError(Nucleus.getNucleus().getMessageProvider().getTextMessageWithFormat("args.selector.nopermissions"));
+        }
+
+        String selector = selectorRaw.substring(1).toLowerCase();
+        Optional<SelectorParser<?>> parserOptional = selectors.stream().filter(x -> x.selector().matcher(selector).matches()).findFirst();
+        if (parserOptional.isPresent()) {
+            return parserOptional.get().get(selector, source, args);
+        }
+
+        throw args.createError(Nucleus.getNucleus().getMessageProvider().getTextMessageWithFormat("args.selector.noexist", selectorRaw));
+    }
+
     private final CommandElement wrappedElement;
     private final CommandPermissionHandler permissionHandler;
     private final Collection<SelectorParser<?>> selectors;
@@ -67,18 +91,7 @@ public class SelectorWrapperArgument extends CommandElement {
     @Nullable
     @Override
     protected Object parseValue(CommandSource source, CommandArgs args) throws ArgumentParseException {
-        if (!permissionHandler.testSelectors(source)) {
-            throw args.createError(Nucleus.getNucleus().getMessageProvider().getTextMessageWithFormat("args.selector.nopermissions"));
-        }
-
-        String selectorRaw = args.next();
-        String selector = selectorRaw.substring(1).toLowerCase();
-        Optional<SelectorParser<?>> parserOptional = selectors.stream().filter(x -> x.selector().matcher(selector).matches()).findFirst();
-        if (parserOptional.isPresent()) {
-            return parserOptional.get().get(selector, source, args);
-        }
-
-        throw args.createError(Nucleus.getNucleus().getMessageProvider().getTextMessageWithFormat("args.selector.noexist", selectorRaw));
+        return parseValue(source, args, permissionHandler, this.selectors, args.next());
     }
 
     @Override

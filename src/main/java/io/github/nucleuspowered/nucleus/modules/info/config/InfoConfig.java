@@ -35,4 +35,8 @@ public class InfoConfig {
     public String getDefaultInfoSection() {
         return infoFileConfig.getDefaultInfoSection();
     }
+
+    public float getMotdDelay() {
+        return Math.max(0f, motdConfig.getDelay());
+    }
 }

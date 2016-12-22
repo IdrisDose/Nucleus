@@ -66,6 +66,7 @@ import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
 import org.spongepowered.api.event.game.state.GameStartedServerEvent;
 import org.spongepowered.api.event.game.state.GameStoppedServerEvent;
 import org.spongepowered.api.plugin.Plugin;
+import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.scheduler.Task;
 import org.spongepowered.api.service.permission.PermissionDescription;
 import org.spongepowered.api.service.permission.PermissionService;
@@ -93,6 +94,7 @@ import javax.annotation.Nullable;
 @Plugin(id = ID, name = NAME, version = VERSION, description = DESCRIPTION)
 public class NucleusPlugin extends Nucleus {
 
+    private final PluginContainer pluginContainer;
     private Instant gameStartedTime = null;
     private boolean modulesLoaded = false;
     private Throwable isErrored = null;
@@ -131,11 +133,12 @@ public class NucleusPlugin extends Nucleus {
 
     // We inject this into the constructor so we can build the config path ourselves.
     @Inject
-    public NucleusPlugin(@ConfigDir(sharedRoot = true) Path configDir, Logger logger) {
+    public NucleusPlugin(@ConfigDir(sharedRoot = true) Path configDir, Logger logger, PluginContainer container) {
         Nucleus.setNucleus(this);
         this.configDir = configDir.resolve(PluginInfo.ID);
         this.dataDir = Sponge.getGame().getSavesDirectory().resolve("nucleus");
         this.logger = new DebugLogger(this, logger);
+        this.pluginContainer = container;
     }
 
     @Listener
@@ -517,6 +520,10 @@ public class NucleusPlugin extends Nucleus {
 
     public Optional<MixinConfigProxy> getMixinConfigIfAvailable() {
         return Optional.ofNullable(this.mixinConfigProxy);
+    }
+
+    public PluginContainer getPluginContainer() {
+        return pluginContainer;
     }
 
     private Injector runInjectorUpdate() {

@@ -4,6 +4,7 @@
  */
 package io.github.nucleuspowered.nucleus.modules.kit.commands;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import io.github.nucleuspowered.nucleus.Util;
@@ -25,11 +26,16 @@ import org.spongepowered.api.command.args.CommandContext;
 import org.spongepowered.api.command.args.CommandElement;
 import org.spongepowered.api.command.args.GenericArguments;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.item.inventory.Inventory;
+import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Tristate;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -108,10 +114,29 @@ public class KitGiveCommand extends AbstractCommand<CommandSource> {
             }
         }
 
+        List<Optional<ItemStackSnapshot>> slotList = Lists.newArrayList();
+        Util.getStandardInventory(player).slots().forEach(x -> slotList.add(x.peek().map(ItemStack::createSnapshot)));
+
+        boolean mustConsumeAll = kitConfigAdapter.getNodeOrDefault().isMustGetAll();
         boolean dropItems = kitConfigAdapter.getNodeOrDefault().isDropKitIfFull();
-        Tristate tristate = Util.addToStandardInventory(player, kit.getStacks(), dropItems);
+        Tristate tristate = Util.addToStandardInventory(player, kit.getStacks(), !mustConsumeAll && dropItems);
         if (tristate != Tristate.TRUE) {
-            if (dropItems) {
+            if (mustConsumeAll) {
+                Inventory inventory = Util.getStandardInventory(player);
+                inventory.clear();
+
+                // Slots
+                Iterator<Inventory> slot = inventory.slots().iterator();
+
+                // Slots to restore
+                slotList.forEach(x -> {
+                    Inventory i = slot.next();
+                    x.ifPresent(y -> i.offer(y.createStack()));
+                });
+
+                throw new ReturnMessageException(plugin.getMessageProvider()
+                    .getTextMessageWithFormat("command.kit.give.fullinventorynosave", plugin.getNameUtil().getSerialisedName(player)));
+            } else if (dropItems) {
                 src.sendMessage(plugin.getMessageProvider()
                     .getTextMessageWithFormat("command.kit.give.itemsdropped", plugin.getNameUtil().getSerialisedName(player)));
             } else {

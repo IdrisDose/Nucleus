@@ -32,7 +32,6 @@ import org.spongepowered.api.text.action.TextActions;
 import javax.inject.Inject;
 import java.util.Collection;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 @RunAsync
 @NoCost
@@ -84,9 +83,9 @@ public class BuyCommand extends io.github.nucleuspowered.nucleus.internal.comman
         }
 
         // Get the cost.
-        final int perUnitCost = node.getServerBuyPrice();
+        final double perUnitCost = node.getServerBuyPrice();
         final int unitCount = amount;
-        final int overallCost = perUnitCost * unitCount;
+        final double overallCost = perUnitCost * unitCount;
         src.sendMessage(plugin.getMessageProvider().getTextMessageWithFormat("command.itembuy.summary", String.valueOf(amount), created.getTranslation().get(), econHelper.getCurrencySymbol(overallCost)));
 
         if (args.hasAny("y")) {
@@ -104,14 +103,14 @@ public class BuyCommand extends io.github.nucleuspowered.nucleus.internal.comman
     private class BuyCallback implements Consumer<CommandSource> {
 
         private final Player src;
-        private final int overallCost;
+        private final double overallCost;
         private final ItemStack created;
         private final int unitCount;
-        private final int perUnitCost;
+        private final double perUnitCost;
 
         private boolean hasRun = false;
 
-        private BuyCallback(Player src, int overallCost, ItemStack created, int unitCount, int perUnitCost) {
+        private BuyCallback(Player src, double overallCost, ItemStack created, int unitCount, double perUnitCost) {
             this.src = src;
             this.overallCost = overallCost;
             this.created = created;
@@ -136,8 +135,8 @@ public class BuyCommand extends io.github.nucleuspowered.nucleus.internal.comman
                             String.valueOf(unitCount), created.getTranslation().get(), econHelper.getCurrencySymbol(overallCost)));
                 } else {
                     Collection<ItemStackSnapshot> iss = itr.getRejectedItems();
-                    int rejected = iss.stream().collect(Collectors.summingInt(ItemStackSnapshot::getCount));
-                    int refund = rejected * perUnitCost;
+                    int rejected = iss.stream().mapToInt(ItemStackSnapshot::getCount).sum();
+                    double refund = rejected * perUnitCost;
                     econHelper.depositInPlayer(src, refund, false);
                     src.sendMessage(plugin.getMessageProvider().getTextMessageWithFormat("command.itembuy.transactionpartial", String.valueOf(rejected), created.getTranslation().get()));
                     src.sendMessage(plugin.getMessageProvider().getTextMessageWithFormat("command.itembuy.transactionsuccess",

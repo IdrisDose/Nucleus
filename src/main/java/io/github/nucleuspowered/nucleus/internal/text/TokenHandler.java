@@ -4,29 +4,36 @@
  */
 package io.github.nucleuspowered.nucleus.internal.text;
 
+import com.google.common.base.Preconditions;
 import io.github.nucleuspowered.nucleus.NucleusPlugin;
+import io.github.nucleuspowered.nucleus.PluginInfo;
 import io.github.nucleuspowered.nucleus.Util;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.text.Text;
 import org.spongepowered.api.text.serializer.TextSerializers;
 
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
 public class TokenHandler {
 
     private final NucleusPlugin plugin;
-    private final Map<String, Function<CommandSource, Optional<Text>>> standardMap = Tokens.getStandardTokens();
+    private boolean registered = false;
+    private NucleusTokenServiceImpl service = null;
 
     private final Text SPACE = Text.of(" ");
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType") private final Optional<Text> EMPTY = Optional.empty();
-    private final Function<CommandSource, Optional<Text>> defaultEntry = cs -> EMPTY;
 
     public TokenHandler(NucleusPlugin plugin) {
         this.plugin = plugin;
+    }
+
+    public final void register(NucleusTokenServiceImpl service) {
+        Preconditions.checkState(!registered);
+        Tokens.registerNucleusTokens(plugin, service);
+        this.service = service;
+        registered = true;
     }
 
     public final Optional<Text> getTextFromToken(String token, CommandSource source) {
@@ -53,7 +60,7 @@ public class TokenHandler {
                 return getTextFromOption(source, token.substring(2), addSpace);
             } else {
                 // Standard.
-                return getTextFromStandardToken(token, source, addSpace);
+                return getTextFromPluginToken(PluginInfo.ID, token, source, addSpace);
             }
         } catch (Exception e) {
             if (plugin.isDebugMode()) {
@@ -64,19 +71,9 @@ public class TokenHandler {
         }
     }
 
-    private Optional<Text> getTextFromStandardToken(String token, CommandSource source, boolean addSpace) {
-        Optional<Text> opt = standardMap.getOrDefault(token.toLowerCase(), defaultEntry).apply(source);
-        if (opt.isPresent() && addSpace) {
-            return Optional.of(opt.get().toBuilder().append(SPACE).build());
-        }
-
-        return opt;
-    }
-
     private Optional<Text> getTextFromPluginToken(String pluginId, String token, CommandSource source, boolean addSpace) {
-        Optional<NucleusTokenServiceImpl> optionalChatService = plugin.getInternalServiceManager().getService(NucleusTokenServiceImpl.class);
-        if (optionalChatService.isPresent()) {
-            Optional<Text> opt = optionalChatService.get().getTokenForCommandSource(pluginId, token, source);
+        if (service != null) {
+            Optional<Text> opt = service.applyToken(pluginId, token, source);
             if (opt.isPresent() && addSpace) {
                 return Optional.of(opt.get().toBuilder().append(SPACE).build());
             }
